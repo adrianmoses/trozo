@@ -1,0 +1,450 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TrozoChunkAPI",
+  "description": "trozo chunk service API contract, generated from Pydantic. Do not edit.",
+  "$defs": {
+    "Alternative": {
+      "additionalProperties": false,
+      "properties": {
+        "surface": {
+          "title": "Surface",
+          "type": "string"
+        },
+        "example_es": {
+          "title": "Example Es",
+          "type": "string"
+        },
+        "regions": {
+          "items": {
+            "$ref": "#/$defs/Region"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "register": {
+          "$ref": "#/$defs/Register",
+          "default": "neutral"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        }
+      },
+      "required": [
+        "surface",
+        "example_es",
+        "regions",
+        "confidence"
+      ],
+      "title": "Alternative",
+      "type": "object"
+    },
+    "Chunk": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "pattern": {
+          "title": "Pattern",
+          "type": "string"
+        },
+        "slots": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Slots",
+          "type": "array"
+        },
+        "surface": {
+          "title": "Surface",
+          "type": "string"
+        },
+        "gloss_en": {
+          "title": "Gloss En",
+          "type": "string"
+        },
+        "register": {
+          "$ref": "#/$defs/Register",
+          "default": "neutral"
+        },
+        "regions": {
+          "items": {
+            "$ref": "#/$defs/Region"
+          },
+          "title": "Regions",
+          "type": "array"
+        },
+        "example": {
+          "$ref": "#/$defs/Example"
+        },
+        "confidence": {
+          "$ref": "#/$defs/Confidence"
+        },
+        "alternatives": {
+          "items": {
+            "$ref": "#/$defs/Alternative"
+          },
+          "title": "Alternatives",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "pattern",
+        "surface",
+        "gloss_en",
+        "example",
+        "confidence"
+      ],
+      "title": "Chunk",
+      "type": "object"
+    },
+    "ChunkRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "source_lang": {
+          "default": "en",
+          "title": "Source Lang",
+          "type": "string"
+        },
+        "target_lang": {
+          "default": "es",
+          "title": "Target Lang",
+          "type": "string"
+        },
+        "preferred_region": {
+          "$ref": "#/$defs/Region",
+          "default": "neutral"
+        },
+        "include_alternatives": {
+          "default": true,
+          "title": "Include Alternatives",
+          "type": "boolean"
+        },
+        "confidence_mode": {
+          "$ref": "#/$defs/ConfidenceMode",
+          "default": "fast"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "title": "ChunkRequest",
+      "type": "object"
+    },
+    "ChunkResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "request_id": {
+          "title": "Request Id",
+          "type": "string"
+        },
+        "input": {
+          "title": "Input",
+          "type": "string"
+        },
+        "translation": {
+          "title": "Translation",
+          "type": "string"
+        },
+        "chunks": {
+          "items": {
+            "$ref": "#/$defs/Chunk"
+          },
+          "title": "Chunks",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "$ref": "#/$defs/Note"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "meta": {
+          "$ref": "#/$defs/Meta"
+        }
+      },
+      "required": [
+        "request_id",
+        "input",
+        "translation",
+        "chunks",
+        "meta"
+      ],
+      "title": "ChunkResponse",
+      "type": "object"
+    },
+    "Confidence": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "$ref": "#/$defs/ConfidenceLabel"
+        },
+        "signals": {
+          "$ref": "#/$defs/Signals"
+        }
+      },
+      "required": [
+        "label"
+      ],
+      "title": "Confidence",
+      "type": "object"
+    },
+    "ConfidenceLabel": {
+      "enum": [
+        "high",
+        "med",
+        "low",
+        "unrated"
+      ],
+      "title": "ConfidenceLabel",
+      "type": "string"
+    },
+    "ConfidenceMode": {
+      "enum": [
+        "fast",
+        "full"
+      ],
+      "title": "ConfidenceMode",
+      "type": "string"
+    },
+    "Conjugation": {
+      "additionalProperties": false,
+      "properties": {
+        "verb": {
+          "title": "Verb",
+          "type": "string"
+        },
+        "person": {
+          "title": "Person",
+          "type": "string"
+        },
+        "tense": {
+          "title": "Tense",
+          "type": "string"
+        }
+      },
+      "required": [
+        "verb",
+        "person",
+        "tense"
+      ],
+      "title": "Conjugation",
+      "type": "object"
+    },
+    "ErrorBody": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "title": "ErrorBody",
+      "type": "object"
+    },
+    "ErrorResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "$ref": "#/$defs/ErrorBody"
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "title": "ErrorResponse",
+      "type": "object"
+    },
+    "Example": {
+      "additionalProperties": false,
+      "properties": {
+        "es": {
+          "title": "Es",
+          "type": "string"
+        },
+        "en": {
+          "title": "En",
+          "type": "string"
+        },
+        "highlight": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Highlight"
+        },
+        "conjugation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Conjugation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "es",
+        "en"
+      ],
+      "title": "Example",
+      "type": "object"
+    },
+    "Meta": {
+      "additionalProperties": false,
+      "properties": {
+        "prompt_version": {
+          "title": "Prompt Version",
+          "type": "string"
+        },
+        "model": {
+          "title": "Model",
+          "type": "string"
+        },
+        "latency_ms": {
+          "title": "Latency Ms",
+          "type": "integer"
+        },
+        "cached": {
+          "title": "Cached",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "prompt_version",
+        "model",
+        "latency_ms",
+        "cached"
+      ],
+      "title": "Meta",
+      "type": "object"
+    },
+    "Note": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/NoteKind"
+        },
+        "avoid": {
+          "title": "Avoid",
+          "type": "string"
+        },
+        "why": {
+          "title": "Why",
+          "type": "string"
+        },
+        "applies_to": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Applies To",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "avoid",
+        "why"
+      ],
+      "title": "Note",
+      "type": "object"
+    },
+    "NoteKind": {
+      "enum": [
+        "calque",
+        "false_friend",
+        "preposition",
+        "ser_estar",
+        "subjunctive_trigger",
+        "gender_or_article",
+        "register",
+        "other"
+      ],
+      "title": "NoteKind",
+      "type": "string"
+    },
+    "Region": {
+      "enum": [
+        "neutral",
+        "ES",
+        "MX",
+        "AR",
+        "CO"
+      ],
+      "title": "Region",
+      "type": "string"
+    },
+    "Register": {
+      "enum": [
+        "coloquial",
+        "neutral",
+        "formal"
+      ],
+      "title": "Register",
+      "type": "string"
+    },
+    "Signals": {
+      "additionalProperties": false,
+      "properties": {
+        "seed": {
+          "default": false,
+          "title": "Seed",
+          "type": "boolean"
+        },
+        "consistency": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Consistency"
+        },
+        "verifier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verifier"
+        }
+      },
+      "title": "Signals",
+      "type": "object"
+    }
+  }
+}

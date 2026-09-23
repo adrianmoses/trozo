@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
-    "test": "pnpm --filter web test",
+    "test": "pnpm --recursive test",
     "lint": "pnpm --filter web lint",
     "format": "prettier --write . && pnpm --filter web exec eslint --fix",
     "check": "prettier --check ."

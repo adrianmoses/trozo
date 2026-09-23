@@ -17,6 +17,13 @@ services:
 
   chunker:
     build: ./services/chunker
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CHUNKER_SEED_PATH: /app/seed/seed_v0.yaml
+      CHUNKER_CACHE_DIR: /app/.cache/chunker
+    volumes:
+      - ./evals/seed:/app/seed:ro
+      - chunker-cache:/app/.cache
     ports:
       - '8000:8000'
 
@@ -37,3 +44,4 @@ services:
 
 volumes:
   pgdata:
+  chunker-cache:

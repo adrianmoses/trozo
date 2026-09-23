@@ -4,10 +4,17 @@ version = "0.1.0"
 description = "trozo chunk service: turns English phrases into reusable Spanish chunks"
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=0.116",
+    "es-core-news-sm",
     "fastapi>=0.115",
     "pydantic>=2.10",
+    "pyyaml>=6.0",
+    "spacy>=3.8",
     "uvicorn>=0.34",
 ]
+
+[tool.uv.sources]
+es-core-news-sm = { url = "https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl" }
 
 [dependency-groups]
 dev = [
@@ -17,3 +24,8 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+filterwarnings = [
+    # `register` is a contract field name (design doc); the pydantic shadow
+    # warning is a false alarm for our usage.
+    "ignore:Field name \"register\":UserWarning",
+]
