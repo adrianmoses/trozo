@@ -1,3 +1,6 @@
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+# generated (json2ts / pydantic export)
+packages/schema/src/index.ts
+packages/schema/chunk.schema.json

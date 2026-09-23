@@ -1,10 +1,10 @@
 # Decision Record: Monorepo Restructure
 
-| Field   | Value               |
-| ------- | ------------------- |
-| id      | 000                 |
-| status  | implemented         |
-| created | 2026-09-23          |
+| Field   | Value                |
+| ------- | -------------------- |
+| id      | 000                  |
+| status  | implemented          |
+| created | 2026-09-23           |
 | spec    | [spec.md](./spec.md) |
 
 ---
@@ -24,10 +24,12 @@ Restructure the repo into a pnpm-workspace monorepo with the TanStack Start app 
 ### Repo layout
 
 **Option A: Flat app + sibling dirs** — keep the app at root, add `services/` and `evals/` beside it.
+
 - Pros: zero move risk; no workspace tooling needed.
 - Cons: diverges from the spec'd layout; `packages/schema` has no natural home; root stays cluttered with app config.
 
 **Option B: Full monorepo restructure (apps/web, services/, evals/, packages/)**
+
 - Pros: matches the approved architecture exactly; clean seams for the schema package and future apps.
 - Cons: one-time move risk (path assumptions), workspace tooling overhead.
 
@@ -50,10 +52,12 @@ Restructure the repo into a pnpm-workspace monorepo with the TanStack Start app 
 ### Vitest configuration
 
 **Option A: let Vitest reuse the app's `vite.config.ts`.**
+
 - Pros: one config.
 - Cons: the TanStack Start/nitro/devtools plugins keep the process alive after tests ("close timed out after 10000ms"), and Vitest's bundled Vite rejects the config's `resolve.tsconfigPaths` typing.
 
 **Option B: standalone minimal `vitest.config.ts`.**
+
 - Pros: clean exit, no plugin coupling; tests run in <1s.
 - Cons: a second config file; path aliases not available in tests until added.
 
@@ -76,14 +80,14 @@ Only one approach was seriously on the table: build from the repo root (context 
 
 ### Spec Divergence <!-- optional -->
 
-The implementation matches the spec on every acceptance criterion. Minor divergences from the spec's *Approach* prose:
+The implementation matches the spec on every acceptance criterion. Minor divergences from the spec's _Approach_ prose:
 
-| Spec Said | What Was Built | Reason |
-| --- | --- | --- |
-| Dockerfile: node 22, run `dist/server/index.mjs` | node 24, run `.output/server/index.mjs` | Local runtime is Node 24; nitro 3 beta emits `.output/`, not `dist/` (the template README was wrong) |
-| Chunker dev deps: pytest, httpx | pytest, **httpx2** | starlette deprecated `httpx` for its TestClient; swap silences the warning |
-| Root keeps eslint config | eslint config lives in `apps/web` | It is `@tanstack/eslint-config`, app-specific; prettier stayed at root as the shared tool |
-| No mention of eslint ignores or pnpm pinning | Added `.output/**` etc. to eslint ignores; pinned `packageManager` | Both surfaced only once builds ran (eslint crawled build output; Docker pnpm 10 hard-errored) |
+| Spec Said                                        | What Was Built                                                     | Reason                                                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Dockerfile: node 22, run `dist/server/index.mjs` | node 24, run `.output/server/index.mjs`                            | Local runtime is Node 24; nitro 3 beta emits `.output/`, not `dist/` (the template README was wrong) |
+| Chunker dev deps: pytest, httpx                  | pytest, **httpx2**                                                 | starlette deprecated `httpx` for its TestClient; swap silences the warning                           |
+| Root keeps eslint config                         | eslint config lives in `apps/web`                                  | It is `@tanstack/eslint-config`, app-specific; prettier stayed at root as the shared tool            |
+| No mention of eslint ignores or pnpm pinning     | Added `.output/**` etc. to eslint ignores; pinned `packageManager` | Both surfaced only once builds ran (eslint crawled build output; Docker pnpm 10 hard-errored)        |
 
 ---
 

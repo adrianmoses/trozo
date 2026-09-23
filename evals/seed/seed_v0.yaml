@@ -1,0 +1,380 @@
+# trozo seed set v0.
+# Format per docs/Chunks Translator — Spec.md. `split`: dev (prompt tuning,
+# few-shot source) | test (report only). Few-shot items in prompts/p1.md are
+# dev by definition.
+
+- id: miss-you-01
+  tier: simple
+  split: dev
+  input: 'I miss you'
+  expected_chunks:
+    - surface: echar de menos
+      regions: [ES]
+    - surface: extrañar
+      regions: [neutral]
+  forbidden:
+    - 'te pierdo'
+  expected_note_kinds: []
+  source: 'own note / DLE: echar de menos, extrañar'
+
+- id: hungry-01
+  tier: simple
+  split: test
+  input: "I'm really hungry"
+  expected_chunks:
+    - surface: tener hambre
+      regions: [neutral]
+  forbidden:
+    - 'estoy hambriento'
+  expected_note_kinds: []
+  source: 'own note / any textbook: tener hambre'
+
+- id: popcorn-01
+  tier: regional
+  split: dev
+  input: "Let's get some popcorn"
+  expected_chunks:
+    - surface: palomitas
+      regions: [ES, MX]
+    - surface: pochoclo
+      regions: [AR]
+    - surface: crispetas
+      regions: [CO]
+  forbidden:
+    - 'maíz explotado'
+  expected_note_kinds: []
+  source: 'own note / DLE regional entries'
+
+- id: bus-01
+  tier: regional
+  split: test
+  input: 'The bus is late'
+  expected_chunks:
+    - surface: llegar tarde
+      regions: [neutral]
+    - surface: colectivo
+      regions: [AR]
+    - surface: camión
+      regions: [MX]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: colectivo (AR), camión (MX coloq.)'
+
+- id: up-to-you-01
+  tier: advanced
+  split: dev
+  input: "It's up to you"
+  expected_chunks:
+    - surface: depender de
+      regions: [neutral]
+  forbidden:
+    - 'depende en'
+  expected_note_kinds: [preposition]
+  source: 'own note / DLE: depender de'
+
+- id: about-to-01
+  tier: advanced
+  split: test
+  input: "I'm about to leave"
+  expected_chunks:
+    - surface: estar a punto de
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: a punto de'
+
+- id: excited-01
+  tier: calque
+  split: dev
+  input: "I'm so excited"
+  expected_chunks:
+    - surface: estar emocionado
+      regions: [neutral]
+  forbidden:
+    - 'excitado'
+  expected_note_kinds: [false_friend]
+  source: 'own note / DLE: excitado (sentido sexual). Bare input has no complement, so tener ganas de is not expected here (spike finding).'
+
+- id: apply-job-01
+  tier: calque
+  split: test
+  input: 'I want to apply for a job'
+  expected_chunks:
+    - surface: solicitar un empleo
+      regions: [neutral]
+  forbidden:
+    - 'aplicar a un trabajo'
+  expected_note_kinds: [false_friend]
+  source: 'own note / DLE: solicitar; aplicar calque from EN (model tags it false_friend — spike finding)'
+
+- id: careful-01
+  tier: simple
+  split: dev
+  input: 'Be careful!'
+  expected_chunks:
+    - surface: tener cuidado
+      regions: [neutral]
+  forbidden:
+    - 'ser cuidadoso'
+  expected_note_kinds: []
+  source: 'own note / any textbook: tener cuidado'
+
+- id: right-01
+  tier: simple
+  split: dev
+  input: "You're right"
+  expected_chunks:
+    - surface: tener razón
+      regions: [neutral]
+  forbidden:
+    - 'estás correcto'
+  expected_note_kinds: []
+  source: 'own note / DLE: tener razón'
+
+- id: shopping-01
+  tier: simple
+  split: dev
+  input: "I'm going shopping tomorrow"
+  expected_chunks:
+    - surface: ir de compras
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: ir de compras'
+
+- id: attention-01
+  tier: simple
+  split: test
+  input: 'Pay attention to the teacher'
+  expected_chunks:
+    - surface: prestar atención
+      regions: [neutral]
+  forbidden:
+    - 'pagar atención'
+  expected_note_kinds: [calque]
+  source: 'own note / DLE: prestar atención; pagar calque from EN'
+
+- id: question-01
+  tier: simple
+  split: test
+  input: 'Can I ask you a question?'
+  expected_chunks:
+    - surface: hacer una pregunta
+      regions: [neutral]
+  forbidden:
+    - 'preguntar una pregunta'
+  expected_note_kinds: []
+  source: 'own note / DLE: hacer una pregunta'
+
+- id: hot-01
+  tier: simple
+  split: test
+  input: "It's really hot today"
+  expected_chunks:
+    - surface: hacer calor
+      regions: [neutral]
+  forbidden:
+    - 'está caliente hoy'
+  expected_note_kinds: []
+  source: 'own note / any textbook: hacer calor (weather)'
+
+- id: walk-01
+  tier: simple
+  split: dev
+  input: "Let's take a walk"
+  expected_chunks:
+    - surface: dar un paseo
+      regions: [neutral]
+  forbidden:
+    - 'tomar un paseo'
+  expected_note_kinds: []
+  source: 'own note / DLE: dar un paseo'
+
+- id: car-01
+  tier: regional
+  split: dev
+  input: 'I bought a new car'
+  expected_chunks:
+    - surface: coche
+      regions: [ES]
+    - surface: carro
+      regions: [MX, CO]
+    - surface: auto
+      regions: [AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: coche, carro, auto regional use'
+
+- id: drive-01
+  tier: regional
+  split: test
+  input: "I don't know how to drive"
+  expected_chunks:
+    - surface: manejar
+      regions: [MX, AR, CO]
+    - surface: conducir
+      regions: [ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: conducir (ES), manejar (Am.)'
+
+- id: cool-01
+  tier: regional
+  split: dev
+  input: "That's so cool!"
+  expected_chunks:
+    - surface: qué chido
+      regions: [MX]
+    - surface: qué guay
+      regions: [ES]
+    - surface: qué chévere
+      regions: [CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: chido, guay, chévere'
+
+- id: job-01
+  tier: regional
+  split: test
+  input: 'I like my new job'
+  expected_chunks:
+    - surface: trabajo
+      regions: [neutral]
+    - surface: chamba
+      regions: [MX]
+    - surface: curro
+      regions: [ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: chamba (Mx coloq.), curro (Esp coloq.)'
+
+- id: juice-01
+  tier: regional
+  split: dev
+  input: "I'd like some orange juice"
+  expected_chunks:
+    - surface: zumo
+      regions: [ES]
+    - surface: jugo
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: zumo (Esp), jugo (Am.)'
+
+- id: computer-01
+  tier: regional
+  split: test
+  input: 'My computer broke'
+  expected_chunks:
+    - surface: ordenador
+      regions: [ES]
+    - surface: computadora
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: ordenador (Esp), computadora (Am.)'
+
+- id: hangout-01
+  tier: regional
+  split: dev
+  input: 'Do you want to hang out tomorrow?'
+  expected_chunks:
+    - surface: quedar
+      regions: [ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: quedar (citarse, Esp)'
+
+- id: hope-subj-01
+  tier: advanced
+  split: dev
+  input: 'I hope you can come'
+  expected_chunks:
+    - surface: esperar que
+      regions: [neutral]
+  forbidden:
+    - 'espero que puedes'
+  expected_note_kinds: [subjunctive_trigger]
+  source: 'own note / any grammar: esperar que + subjuntivo'
+
+- id: concerned-01
+  tier: advanced
+  split: test
+  input: "As far as I'm concerned, it's fine"
+  expected_chunks:
+    - surface: en lo que a mí respecta
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: en lo que respecta a'
+
+- id: soup-cold-01
+  tier: advanced
+  split: test
+  input: 'The soup is cold'
+  expected_chunks:
+    - surface: estar frío
+      regions: [neutral]
+  forbidden:
+    - 'la sopa es fría'
+  expected_note_kinds: [ser_estar]
+  source: 'own note / any grammar: estar for states'
+
+- id: just-ate-01
+  tier: advanced
+  split: dev
+  input: 'I just ate'
+  expected_chunks:
+    - surface: acabar de
+      regions: [neutral]
+  forbidden:
+    - 'justo comí'
+  expected_note_kinds: []
+  source: 'own note / any grammar: acabar de + inf.'
+
+- id: worth-it-01
+  tier: advanced
+  split: test
+  input: "It's worth it"
+  expected_chunks:
+    - surface: valer la pena
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'own note / DLE: valer la pena'
+
+- id: realize-01
+  tier: calque
+  split: dev
+  input: "I didn't realize it was so late"
+  expected_chunks:
+    - surface: darse cuenta de
+      regions: [neutral]
+  forbidden:
+    - 'no realicé'
+  expected_note_kinds: [false_friend]
+  source: 'own note / DLE: realizar ≠ to realize (darse cuenta)'
+
+- id: good-time-01
+  tier: calque
+  split: test
+  input: 'We had a great time'
+  expected_chunks:
+    - surface: pasarlo bien
+      regions: [neutral]
+  forbidden:
+    - 'tuvimos un buen tiempo'
+  expected_note_kinds: [calque]
+  source: 'own note / DLE: pasarlo bien; tiempo = weather/time trap'
+
+- id: decision-01
+  tier: calque
+  split: test
+  input: 'I need to make a decision'
+  expected_chunks:
+    - surface: tomar una decisión
+      regions: [neutral]
+  forbidden:
+    - 'hacer una decisión'
+  expected_note_kinds: [calque]
+  source: 'own note / DLE: tomar una decisión'

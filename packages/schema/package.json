@@ -2,5 +2,16 @@
   "name": "@trozo/schema",
   "version": "0.1.0",
   "private": true,
-  "description": "Generated TypeScript types for the chunk service API contract"
+  "type": "module",
+  "description": "Generated TypeScript types for the chunk service API contract",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "generate": "json2ts --input chunk.schema.json --output src/index.ts --additionalProperties false --unreachableDefinitions",
+    "test": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "json-schema-to-typescript": "^15.0.0",
+    "typescript": "^6.0.2"
+  }
 }
