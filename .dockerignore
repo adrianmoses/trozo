@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/.output
+**/.nitro
+**/.tanstack
+**/.venv
+**/__pycache__
+**/.pytest_cache
+docs
+.git
+.env
+.env.local

@@ -1,0 +1,23 @@
+{
+  "name": "trozo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.1",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "test": "pnpm --filter web test",
+    "lint": "pnpm --filter web lint",
+    "format": "prettier --write . && pnpm --filter web exec eslint --fix",
+    "check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "lightningcss"
+    ]
+  }
+}
