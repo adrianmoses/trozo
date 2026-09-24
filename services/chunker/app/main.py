@@ -177,6 +177,18 @@ def _assemble(request_id: str, text: str, draft: LLMDraft, meta: Meta) -> ChunkR
     )
 
 
+def _backfill_translation_highlight(payload: dict) -> bool:
+    """Cache entries written before 002 have no `translation_highlight` key.
+    Add it on read so every response carries the field; returns True when
+    the payload changed and should be written back."""
+    changed = False
+    for c in payload.get("chunks", []):
+        if "translation_highlight" not in c:
+            c["translation_highlight"] = highlight_range(payload["translation"], c["surface"])
+            changed = True
+    return changed
+
+
 @app.post("/v1/chunk", dependencies=[Depends(require_token)])
 def chunk(request: ChunkRequest) -> JSONResponse:
     started = time.monotonic()
@@ -187,6 +199,8 @@ def chunk(request: ChunkRequest) -> JSONResponse:
     key = cache.cache_key(text, request.preferred_region.value, version, llm.model)
     cached = cache.get(key)
     if cached is not None:
+        if _backfill_translation_highlight(cached):
+            cache.put(key, cached)
         cached["meta"]["cached"] = True
         cached["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
         return JSONResponse(content=cached)

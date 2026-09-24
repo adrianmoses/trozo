@@ -85,9 +85,10 @@ def test_translation_highlight_null_when_no_match(client, fake_llm, monkeypatch)
     assert resp.json()["chunks"][0]["translation_highlight"] is None
 
 
-def test_cached_payload_without_translation_highlight_still_serves(client, fake_llm) -> None:
+def test_cached_payload_without_translation_highlight_is_backfilled(client, fake_llm) -> None:
     """Cache hits are served as raw dicts: entries written before the field
-    existed have no key at all, and must still be returned unchanged."""
+    existed have no key at all. The service adds the range on read and
+    persists it, without calling the LLM."""
     from app.pipeline import cache
     from app.pipeline.normalize import normalize_input
     from app.prompts import current_version
@@ -104,5 +105,7 @@ def test_cached_payload_without_translation_highlight_still_serves(client, fake_
     assert resp.status_code == 200
     body = resp.json()
     assert body["meta"]["cached"] is True
-    assert "translation_highlight" not in body["chunks"][0]
+    assert body["chunks"][0]["translation_highlight"] == [0, 21]
     assert len(fake_llm.calls) == 1
+    # Persisted: the stored entry now carries the field too.
+    assert cache.get(key)["chunks"][0]["translation_highlight"] == [0, 21]
