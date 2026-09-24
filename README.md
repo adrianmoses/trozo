@@ -31,6 +31,14 @@ cd ../evals
 uv run run.py                # eval runner (placeholder)
 ```
 
+## Environment
+
+| Variable            | Used by             | Default                 | Purpose                                                                                      |
+| ------------------- | ------------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | chunker             | —                       | Primary model access.                                                                        |
+| `CHUNKER_URL`       | web                 | `http://localhost:8000` | Where the web app's server functions reach the chunk service. The browser never calls it.    |
+| `CHUNKER_TOKEN`     | chunker, web, evals | unset                   | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`. |
+
 ## Full stack via Docker
 
 ```bash

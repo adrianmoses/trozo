@@ -8,6 +8,7 @@ chunk recall and calque rate. Writes raw results as JSONL.
 
 import argparse
 import json
+import os
 import re
 import sys
 import unicodedata
@@ -115,6 +116,11 @@ def main() -> int:
     parser.add_argument("--split", default="dev", choices=["dev", "test", "all"])
     parser.add_argument("--base-url", default="http://localhost:8000")
     parser.add_argument("--region", default="neutral")
+    parser.add_argument(
+        "--token",
+        default=os.environ.get("CHUNKER_TOKEN"),
+        help="service token sent as Authorization: Bearer (default: $CHUNKER_TOKEN)",
+    )
     args = parser.parse_args()
 
     items = yaml.safe_load(SEED_PATH.read_text(encoding="utf-8")) or []
@@ -124,7 +130,8 @@ def main() -> int:
         print(f"no seed items for split={args.split}", file=sys.stderr)
         return 1
 
-    client = httpx2.Client(base_url=args.base_url, timeout=120)
+    headers = {"Authorization": f"Bearer {args.token}"} if args.token else {}
+    client = httpx2.Client(base_url=args.base_url, timeout=120, headers=headers)
     meta = client.get("/v1/meta").json()
     if meta.get("prompt_version") != args.prompt:
         print(

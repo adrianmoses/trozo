@@ -1,7 +1,9 @@
+import os
+import secrets
 import time
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -52,6 +54,32 @@ async def llm_error_handler(_: Request, exc: LLMError) -> JSONResponse:
 @app.exception_handler(LLMRateLimited)
 async def llm_rate_limited_handler(_: Request, exc: LLMRateLimited) -> JSONResponse:
     return _error(503, "llm_rate_limited", str(exc))
+
+
+class Unauthorized(Exception):
+    pass
+
+
+@app.exception_handler(Unauthorized)
+async def unauthorized_handler(_: Request, exc: Unauthorized) -> JSONResponse:
+    return _error(401, "unauthorized", str(exc) or "missing or invalid service token")
+
+
+def require_token(authorization: str | None = Header(default=None)) -> None:
+    """Opt-in shared-secret check for the chunk endpoint.
+
+    Reads CHUNKER_TOKEN per request (never at import). Unset means open, so
+    local dev and the test suite need no configuration. Health and meta are
+    never guarded.
+    """
+    expected = os.environ.get("CHUNKER_TOKEN")
+    if not expected:
+        return
+    provided = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        provided = authorization[7:].strip()
+    if not provided or not secrets.compare_digest(provided, expected):
+        raise Unauthorized("missing or invalid service token")
 
 
 def get_llm() -> LLMClient:
@@ -116,6 +144,7 @@ def _assemble(request_id: str, text: str, draft: LLMDraft, meta: Meta) -> ChunkR
                     highlight=highlight_range(dc.example.es, dc.surface),
                     conjugation=dc.example.conjugation,
                 ),
+                translation_highlight=highlight_range(draft.translation, dc.surface),
                 confidence=fast_confidence(dc.surface, dc.regions, index),
                 alternatives=[
                     Alternative(
@@ -148,7 +177,7 @@ def _assemble(request_id: str, text: str, draft: LLMDraft, meta: Meta) -> ChunkR
     )
 
 
-@app.post("/v1/chunk")
+@app.post("/v1/chunk", dependencies=[Depends(require_token)])
 def chunk(request: ChunkRequest) -> JSONResponse:
     started = time.monotonic()
     text = normalize_input(request.text)

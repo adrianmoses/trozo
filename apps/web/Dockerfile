@@ -9,6 +9,7 @@ COPY packages/schema/package.json packages/schema/
 RUN pnpm install --filter web
 
 COPY apps/web apps/web
+COPY packages/schema packages/schema
 RUN pnpm --filter web build
 
 FROM node:24-alpine
