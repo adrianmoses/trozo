@@ -44,7 +44,10 @@ Monorepo layout:
 
 ## Open Questions <!-- optional -->
 
-- Which two models for primary and verifier (ideally different providers, so errors are less correlated)?
-- Which regions to support at launch? Spec suggests ES, MX, AR, CO + neutral, then expand.
-- Does the example sentence always mirror the input's person and tense, or show the most common form when the input is a bare fragment ("to look forward to")?
+- Does the example sentence always mirror the input's person and tense, or show the most common form when the input is a bare fragment ("to look forward to")? Deferred to prompt iteration (001).
 - Should notes include a short grammar hint (e.g. "triggers subjunctive") or stay strictly about pitfalls?
+
+Resolved:
+
+- Primary and verifier models: Claude Sonnet 5 generates (001); OpenAI `gpt-5.4-mini` verifies (003).
+- Launch regions: ES, MX, AR, CO + neutral (001).
