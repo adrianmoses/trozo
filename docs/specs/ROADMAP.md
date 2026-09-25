@@ -29,12 +29,13 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 
 ## Revision History
 
-| Date       | Change                                     |
-| ---------- | ------------------------------------------ |
-| 2026-09-23 | Initial roadmap created                    |
-| 2026-09-23 | 000 implemented (decision record complete) |
-| 2026-09-24 | 001 implemented (decision record complete) |
-| 2026-09-24 | 002 spec drafted, status in-progress       |
-| 2026-09-25 | 002 implemented (decision record complete) |
-| 2026-09-25 | 003 spec drafted, status in-progress       |
-| 2026-09-25 | 003 implemented (decision record complete) |
+| Date       | Change                                                  |
+| ---------- | ------------------------------------------------------- |
+| 2026-09-23 | Initial roadmap created                                 |
+| 2026-09-23 | 000 implemented (decision record complete)              |
+| 2026-09-24 | 001 implemented (decision record complete)              |
+| 2026-09-24 | 002 spec drafted, status in-progress                    |
+| 2026-09-25 | 002 implemented (decision record complete)              |
+| 2026-09-25 | 003 spec drafted, status in-progress                    |
+| 2026-09-25 | 003 implemented (decision record complete)              |
+| 2026-09-25 | Docs refresh after 003 (README, ARCHITECTURE, OVERVIEW) |
