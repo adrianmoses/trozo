@@ -133,4 +133,81 @@ describe('TranslatorView', () => {
       screen.queryByRole('heading', { name: /Watch out/ }),
     ).not.toBeInTheDocument()
   })
+
+  it('pending full confidence: spinners on unrated labels only', () => {
+    const unrated = {
+      ...sampleResponse,
+      chunks: [
+        {
+          ...sampleResponse.chunks[0],
+          confidence: { label: 'unrated' as const },
+        },
+      ],
+    }
+    const { rerender } = renderWithProviders(
+      <TranslatorView
+        q={sampleResponse.input}
+        region="neutral"
+        state={{ kind: 'result', data: unrated }}
+        confidencePending
+        onSubmit={noop}
+        onRetry={noop}
+      />,
+    )
+    expect(screen.getAllByTestId('confidence-spinner')).toHaveLength(1)
+
+    const settled = {
+      ...unrated,
+      chunks: [
+        {
+          ...unrated.chunks[0],
+          confidence: {
+            label: 'med' as const,
+            signals: { seed: false, consistency: 0.8, verifier: 'agree' },
+          },
+        },
+      ],
+    }
+    rerender(
+      <TranslatorView
+        q={sampleResponse.input}
+        region="neutral"
+        state={{ kind: 'result', data: settled }}
+        onSubmit={noop}
+        onRetry={noop}
+      />,
+    )
+    expect(screen.queryByTestId('confidence-spinner')).not.toBeInTheDocument()
+    expect(screen.getByText('medium')).toBeInTheDocument()
+    expect(screen.getByTestId('translation')).toHaveTextContent(
+      sampleResponse.translation,
+    )
+  })
+
+  it('full confidence failed: labels stay unrated, no spinner, no alert', () => {
+    renderWithProviders(
+      <TranslatorView
+        q={sampleResponse.input}
+        region="neutral"
+        state={{
+          kind: 'result',
+          data: {
+            ...sampleResponse,
+            chunks: [
+              {
+                ...sampleResponse.chunks[0],
+                confidence: { label: 'unrated' as const },
+              },
+            ],
+          },
+        }}
+        confidencePending={false}
+        onSubmit={noop}
+        onRetry={noop}
+      />,
+    )
+    expect(screen.queryByTestId('confidence-spinner')).not.toBeInTheDocument()
+    expect(screen.getByText('unrated')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })

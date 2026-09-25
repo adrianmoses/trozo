@@ -100,4 +100,31 @@ describe('ChunkCard', () => {
       screen.queryByRole('button', { name: /regional variant/ }),
     ).not.toBeInTheDocument()
   })
+
+  it('greys a low chunk and gives its label the "check this" tooltip', () => {
+    renderWithProviders(
+      <ChunkCard
+        chunk={{
+          ...chunk,
+          confidence: {
+            label: 'low',
+            signals: { seed: false, consistency: 0.4, verifier: 'disagree' },
+          },
+        }}
+        index={0}
+        notes={[]}
+      />,
+    )
+    expect(screen.getByTestId('chunk-card')).toHaveAttribute(
+      'data-card-confidence',
+      'low',
+    )
+    expect(screen.getByTestId('card-body').className).toMatch(/opacity-60/)
+    expect(screen.getByText('low').closest('[tabindex="0"]')).not.toBeNull()
+  })
+
+  it('does not grey a settled high chunk', () => {
+    renderWithProviders(<ChunkCard chunk={chunk} index={0} notes={[]} />)
+    expect(screen.getByTestId('card-body').className).not.toMatch(/opacity-60/)
+  })
 })

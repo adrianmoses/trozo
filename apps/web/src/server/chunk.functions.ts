@@ -26,6 +26,14 @@ export const chunkFn = createServerFn({ method: 'POST' })
     return result
   })
 
+/** Full-confidence rescoring of the same phrase: same chunks, settled labels.
+ * Runs in the background after the fast result; no cookie write. */
+export const chunkFullFn = createServerFn({ method: 'POST' })
+  .validator(validateChunkInput)
+  .handler(async ({ data }): Promise<ChunkResult> =>
+    chunkPhrase({ ...data, confidenceMode: 'full' }),
+  )
+
 /** Region remembered from the last successful request, or `neutral`. Read
  * server-side so the initial selector value matches between SSR and client. */
 export const getPreferredRegion = createServerFn().handler(

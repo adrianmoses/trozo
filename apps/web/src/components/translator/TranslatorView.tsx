@@ -16,7 +16,7 @@ export type TranslatorState =
   | { kind: 'error'; error: ChunkServiceError }
   | { kind: 'result'; data: ChunkResponse }
 
-function Result({ data }: { data: ChunkResponse }) {
+function Result({ data, pending }: { data: ChunkResponse; pending: boolean }) {
   const notes = data.notes ?? []
   const count = data.chunks.length
   return (
@@ -48,6 +48,7 @@ function Result({ data }: { data: ChunkResponse }) {
                 chunk={chunk}
                 index={index}
                 notes={notes}
+                pending={pending}
               />
             ))}
           </div>
@@ -61,12 +62,15 @@ export function TranslatorView({
   q,
   region,
   state,
+  confidencePending = false,
   onSubmit,
   onRetry,
 }: {
   q: string
   region: Region
   state: TranslatorState
+  /** Full confidence is in flight: unrated labels show a spinner. */
+  confidencePending?: boolean
   onSubmit: (text: string, region: Region) => void
   onRetry: () => void
 }) {
@@ -94,7 +98,9 @@ export function TranslatorView({
         className="mt-8 space-y-8"
       >
         {state.kind === 'loading' ? <ResultSkeleton /> : null}
-        {state.kind === 'result' ? <Result data={state.data} /> : null}
+        {state.kind === 'result' ? (
+          <Result data={state.data} pending={confidencePending} />
+        ) : null}
       </section>
     </main>
   )

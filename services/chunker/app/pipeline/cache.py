@@ -13,6 +13,12 @@ def cache_key(normalized_text: str, region: str, prompt_version: str, model: str
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def full_cache_key(fast_key: str, n_samples: int, verifier_model: str, perturb: bool) -> str:
+    """Full-mode entries live beside, never over, the fast entry."""
+    payload = "|".join([fast_key, "full", str(n_samples), verifier_model, str(perturb)])
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def _cache_dir() -> Path:
     return Path(os.environ.get("CHUNKER_CACHE_DIR", DEFAULT_CACHE_DIR))
 

@@ -1,8 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { TranslatorView } from '#/components/translator/TranslatorView'
 import type { TranslatorState } from '#/components/translator/TranslatorView'
-import { chunkQueryOptions } from '#/lib/chunk-query'
+import {
+  chunkFullQueryOptions,
+  chunkQueryOptions,
+  needsFullConfidence,
+} from '#/lib/chunk-query'
 import { validateTranslatorSearch } from '#/lib/search'
 import { getPreferredRegion } from '#/server/chunk.functions'
 
@@ -21,7 +25,15 @@ function TranslatorPage() {
   const navigate = useNavigate({ from: '/' })
   const q = search.q ?? ''
   const region = search.region ?? defaultRegion
+  const queryClient = useQueryClient()
   const query = useQuery(chunkQueryOptions({ q, region }))
+  // Background full confidence once the fast result is in (feature 003).
+  const fullQuery = useQuery(
+    chunkFullQueryOptions(
+      { q, region, enabled: needsFullConfidence(query.data) },
+      queryClient,
+    ),
+  )
 
   let state: TranslatorState
   if (!q) {
@@ -47,6 +59,7 @@ function TranslatorPage() {
       q={q}
       region={region}
       state={state}
+      confidencePending={fullQuery.isFetching}
       onSubmit={(text, nextRegion) =>
         void navigate({ search: { q: text, region: nextRegion } })
       }

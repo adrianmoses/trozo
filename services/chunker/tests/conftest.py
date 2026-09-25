@@ -71,6 +71,35 @@ def make_draft() -> LLMDraft:
     )
 
 
+class FakeVerifier:
+    """Answers every claim id with a fixed answer (or per-id overrides)."""
+
+    model = "fake-verifier"
+
+    def __init__(self, default: str = "yes", overrides: dict[str, str] | None = None,
+                 error: Exception | None = None) -> None:
+        self.default = default
+        self.overrides = overrides or {}
+        self.error = error
+        self.calls: list[str] = []
+
+    def generate_structured(self, system: str, user: str, output_model: type[BaseModel]):
+        import re
+
+        from app.pipeline.full import VerifierAnswer, VerifierAnswers
+
+        self.calls.append(user)
+        if self.error:
+            raise self.error
+        ids = re.findall(r"^\[([^\]]+)\]", user, flags=re.M)
+        return VerifierAnswers(
+            answers=[
+                VerifierAnswer(id=i, answer=self.overrides.get(i, self.default), reason="r")
+                for i in ids
+            ]
+        )
+
+
 @pytest.fixture
 def fake_llm() -> FakeLLMClient:
     return FakeLLMClient()
@@ -83,7 +112,11 @@ def client(fake_llm: FakeLLMClient, tmp_path, monkeypatch) -> TestClient:
     from app.pipeline.seed import load_seed_index
 
     load_seed_index.cache_clear()
+    monkeypatch.delenv("CHUNKER_TOKEN", raising=False)
+    monkeypatch.delenv("CHUNKER_SAMPLE_PERTURB", raising=False)
     app.state.llm = fake_llm
+    app.state.verifier = None  # no verifier unless a test installs one
     yield TestClient(app)
     app.state.llm = None
+    del app.state.verifier
     load_seed_index.cache_clear()
