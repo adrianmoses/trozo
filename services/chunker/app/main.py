@@ -22,7 +22,7 @@ from app.models import (
     Region,
 )
 from app.pipeline import cache
-from app.pipeline.confidence import fast_confidence
+from app.pipeline.confidence import fast_confidence, refresh_seed
 from app.pipeline.full import N_SAMPLES, T_HIGH, T_MED, relabel, score_full
 from app.pipeline.normalize import InvalidInput, normalize_input
 from app.pipeline.seed import load_seed_index
@@ -221,6 +221,7 @@ def chunk(request: ChunkRequest) -> JSONResponse:
     if fast is not None:
         if _backfill_translation_highlight(fast):
             cache.put(key, fast)
+        refresh_seed(fast, load_seed_index())
         fast_cached = True
     else:
         system = load_prompt(version)
@@ -247,6 +248,7 @@ def chunk(request: ChunkRequest) -> JSONResponse:
     fkey = cache.full_cache_key(key, N_SAMPLES, verifier.model if verifier else "none", perturb)
     full = cache.get(fkey)
     if full is not None:
+        refresh_seed(full, load_seed_index())
         relabel(full)
         full["meta"]["cached"] = True
     else:

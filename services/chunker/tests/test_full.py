@@ -152,3 +152,30 @@ def test_cached_full_entries_are_relabelled_with_current_thresholds(client, fake
     assert again["meta"]["cached"] is True
     assert again["chunks"][0]["confidence"]["label"] == "high"
     assert len(fake_llm.calls) == 6
+
+
+def test_cached_full_payload_picks_up_the_current_seed(client, fake_llm, tmp_path, monkeypatch) -> None:
+    """Bug 001: a full entry cached with seed=false becomes seed-verified once
+    the seed lists the chunk, without new LLM or verifier calls."""
+    fake_llm.responses = [make_draft()] + [other_draft()] * 5
+    verifier = FakeVerifier("no")
+    app.state.verifier = verifier
+    first = full(client).json()["chunks"][0]
+    assert first["confidence"]["label"] == "low"
+
+    seed = tmp_path / "seed2.yaml"
+    seed.write_text(
+        "- id: s\n  expected_chunks:\n    - surface: tener muchas ganas de\n      regions: [neutral]\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CHUNKER_SEED_PATH", str(seed))
+    from app.pipeline.seed import load_seed_index
+
+    load_seed_index.cache_clear()
+    again = full(client).json()
+    assert again["meta"]["cached"] is True
+    chunk = again["chunks"][0]
+    assert chunk["confidence"]["signals"]["seed"] is True
+    assert chunk["confidence"]["label"] == "high"
+    assert len(fake_llm.calls) == 6
+    assert len(verifier.calls) == 1

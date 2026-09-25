@@ -38,3 +38,30 @@ def test_seed_match_with_optional_word_high() -> None:
     # spike finding: 'tener muchas ganas de' must hit seed 'tener ganas de'
     conf = fast_confidence("tener muchas ganas de", [Region.neutral], make_index())
     assert conf.label is ConfidenceLabel.high
+
+
+# --- bug 001: default seed path (written before the fix; failed before it) ---
+
+
+def test_default_seed_path_points_at_the_repo_seed_file() -> None:
+    from pathlib import Path
+
+    from app.pipeline.seed import DEFAULT_SEED_PATH
+
+    repo_root = Path(__file__).resolve().parents[3]
+    assert DEFAULT_SEED_PATH.resolve() == repo_root / "evals" / "seed" / "seed_v0.yaml"
+    assert DEFAULT_SEED_PATH.is_file()
+
+
+def test_seed_index_loads_without_env_override(monkeypatch) -> None:
+    from app.pipeline.seed import load_seed_index
+    from app.pipeline.spanish import lemma_key
+
+    monkeypatch.delenv("CHUNKER_SEED_PATH", raising=False)
+    load_seed_index.cache_clear()
+    try:
+        index = load_seed_index()
+        assert len(index) > 0
+        assert "ES" in (index.regions_for(lemma_key("echar de menos")) or set())
+    finally:
+        load_seed_index.cache_clear()
