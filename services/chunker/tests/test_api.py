@@ -109,3 +109,31 @@ def test_cached_payload_without_translation_highlight_is_backfilled(client, fake
     assert len(fake_llm.calls) == 1
     # Persisted: the stored entry now carries the field too.
     assert cache.get(key)["chunks"][0]["translation_highlight"] == [0, 21]
+
+
+def _seed_with_tener_ganas(tmp_path, monkeypatch) -> None:
+    seed = tmp_path / "seed.yaml"
+    seed.write_text(
+        "- id: s\n  expected_chunks:\n    - surface: tener muchas ganas de\n      regions: [neutral]\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CHUNKER_SEED_PATH", str(seed))
+    from app.pipeline.seed import load_seed_index
+
+    load_seed_index.cache_clear()
+
+
+def test_cached_fast_payload_picks_up_the_current_seed(client, fake_llm, tmp_path, monkeypatch) -> None:
+    """Bug 001: responses cached while the seed index was empty store
+    seed=false. The seed signal must be recomputed on read."""
+    fake_llm.responses = [make_draft()]
+    first = post(client).json()["chunks"][0]
+    assert first["confidence"]["label"] == "unrated"  # empty seed in fixture
+
+    _seed_with_tener_ganas(tmp_path, monkeypatch)
+    again = post(client).json()
+    assert again["meta"]["cached"] is True
+    chunk = again["chunks"][0]
+    assert chunk["confidence"]["label"] == "high"
+    assert chunk["confidence"]["signals"]["seed"] is True
+    assert len(fake_llm.calls) == 1

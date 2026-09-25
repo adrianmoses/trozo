@@ -4,9 +4,13 @@ import os
 from typing import Protocol, TypeVar
 
 import anthropic
+import openai
 from pydantic import BaseModel
 
 DEFAULT_MODEL = "claude-sonnet-5"
+# Chosen by the 003 spike: ties gpt-5.5 on the poison set (13/13 caught,
+# 6/6 controls), agrees less with unexpected chunks, and is ~2x faster.
+DEFAULT_VERIFIER_MODEL = "gpt-5.4-mini"
 DEFAULT_EFFORT = "medium"
 MAX_TOKENS = 8192
 
@@ -54,3 +58,31 @@ class AnthropicLLMClient:
                 f"model returned unparseable output (stop_reason={response.stop_reason})"
             )
         return response.parsed_output
+
+
+class OpenAILLMClient:
+    """Verifier client (003). A different vendor from the Claude primary so
+    verifier errors are less correlated with generation errors."""
+
+    def __init__(self, model: str | None = None) -> None:
+        self.model = model or os.environ.get("CHUNKER_VERIFIER_MODEL", DEFAULT_VERIFIER_MODEL)
+        self._client = openai.OpenAI()
+
+    def generate_structured(self, system: str, user: str, output_model: type[T]) -> T:
+        # No sampling params: several current OpenAI models reject them, and
+        # the verifier answers narrow yes/no/unsure claims.
+        try:
+            response = self._client.responses.parse(
+                model=self.model,
+                instructions=system,
+                input=user,
+                text_format=output_model,
+            )
+        except openai.RateLimitError as exc:
+            raise LLMRateLimited(str(exc)) from exc
+        except (openai.APIStatusError, openai.APIConnectionError) as exc:
+            raise LLMError(str(exc)) from exc
+        parsed = response.output_parsed
+        if parsed is None:
+            raise LLMError(f"verifier returned unparseable output (status={response.status})")
+        return parsed

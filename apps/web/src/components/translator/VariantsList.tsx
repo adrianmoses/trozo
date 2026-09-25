@@ -1,21 +1,19 @@
 import { useId, useState } from 'react'
 import type { Alternative } from '@trozo/schema'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '#/components/ui/tooltip'
 import { variantsToggleLabel } from '#/lib/labels'
 import { cn } from '#/lib/utils'
 import { ConfidenceLabel } from './ConfidenceLabel'
 import { RegionPill, RegisterPill } from './Pills'
 
-/** Collapsed "+ n regional variants"; low rows are greyed with a "check
- * this" tooltip, unrated rows render neutrally (no spinner until 003). */
+/** Collapsed "+ n regional variants"; low rows are greyed and their label
+ * carries a "check this" tooltip; unrated rows spin while full confidence is
+ * pending. */
 export function VariantsList({
   alternatives,
+  pending = false,
 }: {
   alternatives: Alternative[]
+  pending?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const listId = useId()
@@ -58,18 +56,10 @@ export function VariantsList({
                 {alt.register && alt.register !== 'neutral' ? (
                   <RegisterPill register={alt.register} />
                 ) : null}
-                {low ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span tabIndex={0} className="cursor-help">
-                        <ConfidenceLabel confidence={alt.confidence} />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>check this</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <ConfidenceLabel confidence={alt.confidence} />
-                )}
+                <ConfidenceLabel
+                  confidence={alt.confidence}
+                  pending={pending}
+                />
               </li>
             )
           })}

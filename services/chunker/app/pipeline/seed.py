@@ -8,7 +8,9 @@ import yaml
 
 from app.pipeline.spanish import keys_overlap, lemma_key
 
-DEFAULT_SEED_PATH = Path(__file__).parents[3] / "evals" / "seed" / "seed_v0.yaml"
+# app/pipeline/seed.py -> parents: pipeline, app, chunker, services, <repo root>.
+# (Was parents[3], i.e. services/, which left the index empty outside Docker; bug 001.)
+DEFAULT_SEED_PATH = Path(__file__).parents[4] / "evals" / "seed" / "seed_v0.yaml"
 
 
 class SeedIndex:

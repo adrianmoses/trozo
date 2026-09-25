@@ -1,0 +1,77 @@
+# Poison claims for the verifier (feature 003). `truth: false` claims are
+# deliberately wrong (wrong region, false friend, calque); a good verifier
+# answers "no". `truth: true` claims are controls; a good verifier answers
+# "yes". Catch rate = "no" on false claims; control acceptance = "yes" on
+# true claims. Wording mirrors app/pipeline/full.py build_claims().
+
+- id: poison-pochoclo-es
+  truth: false
+  claim: '"pochoclo" is a common way to say "popcorn" in Spain.'
+  note: Río de la Plata word; Spain says palomitas.
+- id: poison-coger-bus-mx
+  truth: false
+  claim: '"coger el autobús" is a common way to say "to catch the bus" in Mexico.'
+  note: coger is vulgar in Mexico; tomar el camión.
+- id: poison-guagua-ar
+  truth: false
+  claim: '"guagua" is a common way to say "bus" in Argentina.'
+  note: Caribbean and Canary Islands; Argentina says colectivo.
+- id: poison-carro-es
+  truth: false
+  claim: '"carro" is a common way to say "car" in Spain.'
+  note: Spain says coche.
+- id: poison-chevere-es
+  truth: false
+  claim: '"chévere" is a common way to say "cool, great" in Spain.'
+  note: Venezuela, Colombia, Caribbean.
+- id: poison-que-padre-es
+  truth: false
+  claim: '"¡qué padre!" is a common way to say "how cool!" in Spain.'
+  note: Mexican.
+- id: poison-frutilla-es
+  truth: false
+  claim: '"frutilla" is a common way to say "strawberry" in Spain.'
+  note: Southern Cone; Spain says fresa.
+- id: poison-ordenador-mx
+  truth: false
+  claim: '"ordenador" is a common way to say "computer" in Mexico.'
+  note: Spain only; Mexico says computadora.
+- id: poison-embarazada
+  truth: false
+  claim: '"estar embarazada" is commonly used across most of the Spanish-speaking world to mean "to be embarrassed".'
+  note: False friend; means pregnant.
+- id: poison-realizar
+  truth: false
+  claim: '"realizar" is commonly used across most of the Spanish-speaking world to mean "to realize (become aware of)".'
+  note: False friend; darse cuenta.
+- id: poison-hacer-decision
+  truth: false
+  claim: '"hacer una decisión" is commonly used across most of the Spanish-speaking world to mean "to make a decision".'
+  note: Calque; tomar una decisión.
+- id: poison-buen-tiempo
+  truth: false
+  claim: '"tener un buen tiempo" is commonly used across most of the Spanish-speaking world to mean "to have a good time".'
+  note: Calque; pasarlo bien.
+- id: poison-excitado
+  truth: false
+  claim: '"estar excitado por + inf." is commonly used across most of the Spanish-speaking world to mean "to be excited about (doing something)".'
+  note: Reads as sexually aroused; emocionado, tener ganas de.
+
+- id: control-echar-de-menos-es
+  truth: true
+  claim: '"echar de menos + a alguien" is commonly used in Spain to mean "to miss (someone)".'
+- id: control-camion-mx
+  truth: true
+  claim: '"camión" is a common way to say "bus" in Mexico.'
+- id: control-palomitas-es
+  truth: true
+  claim: '"palomitas" is a common way to say "popcorn" in Spain.'
+- id: control-que-padre-mx
+  truth: true
+  claim: '"¡qué padre!" is a common way to say "how cool!" in Mexico.'
+- id: control-computadora-mx
+  truth: true
+  claim: '"computadora" is a common way to say "computer" in Mexico.'
+- id: control-pasarlo-bien
+  truth: true
+  claim: '"pasarlo bien" is commonly used in Spain to mean "to have a good time".'

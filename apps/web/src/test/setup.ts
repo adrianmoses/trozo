@@ -12,6 +12,11 @@ afterEach(() => {
 Element.prototype.hasPointerCapture = () => false
 Element.prototype.releasePointerCapture = () => {}
 Element.prototype.scrollIntoView = () => {}
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({

@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from app.llm import AnthropicLLMClient, LLMClient, LLMError, LLMRateLimited
+from app.llm import AnthropicLLMClient, LLMClient, LLMError, LLMRateLimited, OpenAILLMClient
 from app.models import (
     Alternative,
     Chunk,
@@ -22,7 +22,8 @@ from app.models import (
     Region,
 )
 from app.pipeline import cache
-from app.pipeline.confidence import fast_confidence
+from app.pipeline.confidence import fast_confidence, refresh_seed
+from app.pipeline.full import N_SAMPLES, T_HIGH, T_MED, relabel, score_full
 from app.pipeline.normalize import InvalidInput, normalize_input
 from app.pipeline.seed import load_seed_index
 from app.pipeline.spanish import highlight_range
@@ -90,6 +91,23 @@ def get_llm() -> LLMClient:
     return llm
 
 
+_UNSET = object()
+
+
+def get_verifier() -> LLMClient | None:
+    """OpenAI verifier, or None when OPENAI_API_KEY is unset (full mode then
+    degrades to consistency-only signals)."""
+    verifier = getattr(app.state, "verifier", _UNSET)
+    if verifier is _UNSET:
+        verifier = OpenAILLMClient() if os.environ.get("OPENAI_API_KEY") else None
+        app.state.verifier = verifier
+    return verifier
+
+
+def sample_perturb() -> bool:
+    return os.environ.get("CHUNKER_SAMPLE_PERTURB", "").lower() in ("1", "true", "yes")
+
+
 @app.get("/v1/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -101,6 +119,8 @@ def meta() -> dict:
         "regions": [r.value for r in Region],
         "note_kinds": [k.value for k in NoteKind],
         "prompt_version": current_version(),
+        "verifier_model": (v.model if (v := get_verifier()) else None),
+        "full_confidence": {"samples": N_SAMPLES, "t_high": T_HIGH, "t_med": T_MED},
     }
 
 
@@ -195,33 +215,52 @@ def chunk(request: ChunkRequest) -> JSONResponse:
     text = normalize_input(request.text)
     llm = get_llm()
     version = current_version()
-
     key = cache.cache_key(text, request.preferred_region.value, version, llm.model)
-    cached = cache.get(key)
-    if cached is not None:
-        if _backfill_translation_highlight(cached):
-            cache.put(key, cached)
-        cached["meta"]["cached"] = True
-        cached["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
-        return JSONResponse(content=cached)
 
-    system = load_prompt(version)
-    draft, _errors = _generate_draft(llm, system, text, request.preferred_region)
+    fast = cache.get(key)
+    if fast is not None:
+        if _backfill_translation_highlight(fast):
+            cache.put(key, fast)
+        refresh_seed(fast, load_seed_index())
+        fast_cached = True
+    else:
+        system = load_prompt(version)
+        draft, _errors = _generate_draft(llm, system, text, request.preferred_region)
+        response = _assemble(
+            request_id=f"req_{uuid.uuid4().hex[:12]}",
+            text=text,
+            draft=draft,
+            meta=Meta(prompt_version=version, model=llm.model, latency_ms=0, cached=False),
+        )
+        fast = response.model_dump(mode="json")
+        cache.put(key, fast)
+        fast_cached = False
 
-    # 001 implements fast mode only; a `full` request still gets a fast answer.
-    _ = request.confidence_mode is ConfidenceMode.full
+    if request.confidence_mode is ConfidenceMode.fast:
+        fast["meta"]["cached"] = fast_cached
+        fast["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
+        return JSONResponse(content=fast)
 
-    response = _assemble(
-        request_id=f"req_{uuid.uuid4().hex[:12]}",
-        text=text,
-        draft=draft,
-        meta=Meta(
-            prompt_version=version,
-            model=llm.model,
-            latency_ms=int((time.monotonic() - started) * 1000),
-            cached=False,
-        ),
-    )
-    payload = response.model_dump(mode="json")
-    cache.put(key, payload)
-    return JSONResponse(content=payload)
+    # Full mode rescores the fast response: same ids, text and order; only
+    # confidence changes. Cached under its own key; the fast entry is untouched.
+    verifier = get_verifier()
+    perturb = sample_perturb()
+    fkey = cache.full_cache_key(key, N_SAMPLES, verifier.model if verifier else "none", perturb)
+    full = cache.get(fkey)
+    if full is not None:
+        refresh_seed(full, load_seed_index())
+        relabel(full)
+        full["meta"]["cached"] = True
+    else:
+        full = score_full(
+            fast,
+            llm,
+            verifier,
+            load_prompt(version),
+            _user_message(text, request.preferred_region),
+            perturb=perturb,
+        )
+        cache.put(fkey, full)
+        full["meta"]["cached"] = False
+    full["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
+    return JSONResponse(content=full)

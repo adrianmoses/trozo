@@ -42,11 +42,14 @@ uv run run.py                # eval runner (placeholder)
 
 ## Environment
 
-| Variable            | Used by             | Default                 | Purpose                                                                                      |
-| ------------------- | ------------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
-| `ANTHROPIC_API_KEY` | chunker             | —                       | Primary model access.                                                                        |
-| `CHUNKER_URL`       | web                 | `http://localhost:8000` | Where the web app's server functions reach the chunk service. The browser never calls it.    |
-| `CHUNKER_TOKEN`     | chunker, web, evals | unset                   | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`. |
+| Variable                 | Used by             | Default                 | Purpose                                                                                                           |
+| ------------------------ | ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`      | chunker             | —                       | Primary model access.                                                                                             |
+| `CHUNKER_URL`            | web                 | `http://localhost:8000` | Where the web app's server functions reach the chunk service. The browser never calls it.                         |
+| `CHUNKER_TOKEN`          | chunker, web, evals | unset                   | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`.                      |
+| `OPENAI_API_KEY`         | chunker             | unset                   | Verifier access for full confidence (003). Unset: full mode uses self-consistency only.                           |
+| `CHUNKER_VERIFIER_MODEL` | chunker             | `gpt-5.4-mini`          | OpenAI model that checks chunk and region claims.                                                                 |
+| `CHUNKER_SAMPLE_PERTURB` | chunker             | off                     | Reorder few-shot examples per self-consistency sample. Off by default (the 003 spike found it added no variance). |
 
 ## Full stack via Docker
 

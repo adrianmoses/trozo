@@ -106,4 +106,15 @@ describe('chunkPhrase', () => {
       error: { status: 0, code: 'network', message: 'fetch failed' },
     })
   })
+
+  it('sends confidence_mode full when asked', async () => {
+    const { fetchImpl, calls } = fakeFetch(200, sampleResponse)
+    await chunkPhrase(
+      { ...input, confidenceMode: 'full' },
+      { fetch: fetchImpl, env: {} },
+    )
+    expect(JSON.parse(String(calls[0].init.body))).toMatchObject({
+      confidence_mode: 'full',
+    })
+  })
 })

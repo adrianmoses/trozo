@@ -15,6 +15,8 @@ export type ChunkResult =
 export interface ChunkPhraseInput {
   text: string
   region: Region
+  /** `full` adds self-consistency + verifier signals (feature 003). */
+  confidenceMode?: 'fast' | 'full'
 }
 
 export interface ChunkerConfig {
@@ -54,7 +56,7 @@ export async function chunkPhrase(
       body: JSON.stringify({
         text: input.text,
         preferred_region: input.region,
-        confidence_mode: 'fast',
+        confidence_mode: input.confidenceMode ?? 'fast',
       }),
     })
   } catch (e) {
