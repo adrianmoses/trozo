@@ -5,6 +5,7 @@
   "packageManager": "pnpm@9.15.1",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "dev:all": "uvx honcho -e .env.local start",
     "build": "pnpm --filter web build",
     "test": "pnpm --recursive test",
     "lint": "pnpm --filter web lint",
