@@ -7,15 +7,28 @@ export const Route = createFileRoute('/about')({
 function About() {
   return (
     <main className="page-wrap px-4 py-12">
-      <section className="island-shell rounded-2xl p-6 sm:p-8">
-        <p className="island-kicker mb-2">About</p>
-        <h1 className="display-title mb-3 text-4xl font-bold text-[var(--sea-ink)] sm:text-5xl">
-          A small starter with room to grow.
+      <section className="rise-in max-w-2xl">
+        <p className="font-mono text-xs tracking-wider text-ink-faint uppercase">
+          About
+        </p>
+        <h1 className="mt-2 font-serif text-4xl leading-tight font-semibold text-ink sm:text-5xl">
+          Reusable Spanish, not one-off translations.
         </h1>
-        <p className="m-0 max-w-3xl text-base leading-8 text-[var(--sea-ink-soft)]">
-          TanStack Start gives you type-safe routing, server functions, and
-          modern SSR defaults. Use this as a clean foundation, then layer in
-          your own routes, styling, and add-ons.
+        <p className="mt-5 text-base leading-8 text-ink-muted">
+          trozo turns an English phrase into one to five reusable Spanish
+          chunks, patterns like{' '}
+          <span lang="es" className="font-serif text-ink">
+            tener ganas de
+          </span>{' '}
+          + infinitive, each with a conjugated example that mirrors your phrase,
+          regional variants tagged by region, and warnings about calques and
+          false friends.
+        </p>
+        <p className="mt-4 text-base leading-8 text-ink-muted">
+          Confidence labels are derived from signals, starting with a seed list
+          of verified chunks, never from the model rating itself. It is a
+          learning and portfolio project, so the eval harness is a first-class
+          part of it.
         </p>
       </section>
     </main>

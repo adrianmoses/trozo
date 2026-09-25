@@ -35,6 +35,10 @@ export type Highlight = number[] | null;
 export type Verb = string;
 export type Person = string;
 export type Tense = string;
+/**
+ * Character range [start, end) of the chunk inside `translation`, computed by the service; null when no lemma-level match is found
+ */
+export type TranslationHighlight = number[] | null;
 export type Alternatives = Alternative[];
 export type Text = string;
 export type SourceLang = string;
@@ -127,6 +131,7 @@ export interface Chunk {
   register?: Register1;
   regions?: Regions1;
   example: Example;
+  translation_highlight?: TranslationHighlight;
   confidence: Confidence;
   alternatives?: Alternatives;
 }

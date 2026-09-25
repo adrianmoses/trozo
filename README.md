@@ -16,6 +16,15 @@ A web tool that turns an English phrase into reusable Spanish chunks — pattern
 
 Prerequisites: Node 24+, [pnpm](https://pnpm.io) 9, [uv](https://docs.astral.sh/uv/), Docker.
 
+Run the chunk service and the web app together, with reload on both (uses `uvx honcho` and the root `Procfile`; the chunker's key is read from `ANTHROPIC_KEY` in `.env.local`):
+
+```bash
+pnpm install
+pnpm dev:all                 # chunker on :8000, web on :3000; Ctrl+C stops both
+```
+
+Or run pieces individually:
+
 ```bash
 pnpm install                 # JS workspaces (apps/web, packages/*)
 pnpm dev                     # web app on http://localhost:3000
@@ -30,6 +39,14 @@ uv run pytest                # service tests
 cd ../evals
 uv run run.py                # eval runner (placeholder)
 ```
+
+## Environment
+
+| Variable            | Used by             | Default                 | Purpose                                                                                      |
+| ------------------- | ------------------- | ----------------------- | -------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | chunker             | —                       | Primary model access.                                                                        |
+| `CHUNKER_URL`       | web                 | `http://localhost:8000` | Where the web app's server functions reach the chunk service. The browser never calls it.    |
+| `CHUNKER_TOKEN`     | chunker, web, evals | unset                   | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`. |
 
 ## Full stack via Docker
 

@@ -160,6 +160,11 @@ class Chunk(StrictModel):
     register: Register = Register.neutral
     regions: list[Region] = Field(default_factory=lambda: [Region.neutral])
     example: Example
+    translation_highlight: list[int] | None = Field(
+        default=None,
+        description="Character range [start, end) of the chunk inside `translation`, "
+        "computed by the service; null when no lemma-level match is found",
+    )
     confidence: Confidence
     alternatives: list[Alternative] = Field(default_factory=list)
 

@@ -1,20 +1,56 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import { TranslatorView } from '#/components/translator/TranslatorView'
+import type { TranslatorState } from '#/components/translator/TranslatorView'
+import { chunkQueryOptions } from '#/lib/chunk-query'
+import { validateTranslatorSearch } from '#/lib/search'
+import { getPreferredRegion } from '#/server/chunk.functions'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  validateSearch: validateTranslatorSearch,
+  // The loader only reads the region cookie (no LLM call); Infinity keeps it
+  // from re-running on every search change. See spec 002, Key Decisions.
+  staleTime: Infinity,
+  loader: async () => ({ defaultRegion: await getPreferredRegion() }),
+  component: TranslatorPage,
+})
 
-function App() {
+function TranslatorPage() {
+  const search = Route.useSearch()
+  const { defaultRegion } = Route.useLoaderData()
+  const navigate = useNavigate({ from: '/' })
+  const q = search.q ?? ''
+  const region = search.region ?? defaultRegion
+  const query = useQuery(chunkQueryOptions({ q, region }))
+
+  let state: TranslatorState
+  if (!q) {
+    state = { kind: 'idle' }
+  } else if (
+    query.isPending ||
+    (query.isFetching && query.data?.ok === false)
+  ) {
+    state = { kind: 'loading' }
+  } else if (query.isError) {
+    state = {
+      kind: 'error',
+      error: { status: 0, code: 'client', message: query.error.message },
+    }
+  } else if (query.data.ok) {
+    state = { kind: 'result', data: query.data.data }
+  } else {
+    state = { kind: 'error', error: query.data.error }
+  }
+
   return (
-    <main className="page-wrap px-4 pb-8 pt-14">
-      <section className="island-shell rise-in rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
-        <p className="island-kicker mb-3">trozo</p>
-        <h1 className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-[var(--sea-ink)] sm:text-6xl">
-          English in, Spanish chunks out.
-        </h1>
-        <p className="mb-8 max-w-2xl text-base text-[var(--sea-ink-soft)] sm:text-lg">
-          The translator UI arrives with feature 002. This placeholder confirms
-          the app runs from its new home in the monorepo.
-        </p>
-      </section>
-    </main>
+    <TranslatorView
+      q={q}
+      region={region}
+      state={state}
+      onSubmit={(text, nextRegion) =>
+        void navigate({ search: { q: text, region: nextRegion } })
+      }
+      onRetry={() => void query.refetch()}
+    />
   )
 }

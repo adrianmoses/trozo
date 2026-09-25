@@ -21,6 +21,7 @@ export const sampleResponse: ChunkResponse = {
         highlight: [0, 21],
         conjugation: { verb: 'tener', person: '1sg', tense: 'presente' },
       },
+      translation_highlight: [0, 21],
       confidence: {
         label: 'high',
         signals: { seed: true, consistency: null, verifier: null },

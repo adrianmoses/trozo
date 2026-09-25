@@ -19,6 +19,7 @@ services:
     build: ./services/chunker
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CHUNKER_TOKEN: ${CHUNKER_TOKEN:-}
       CHUNKER_SEED_PATH: /app/seed/seed_v0.yaml
       CHUNKER_CACHE_DIR: /app/.cache/chunker
     volumes:
@@ -34,6 +35,7 @@ services:
     environment:
       DATABASE_URL: postgres://trozo:trozo@postgres:5432/trozo
       CHUNKER_URL: http://chunker:8000
+      CHUNKER_TOKEN: ${CHUNKER_TOKEN:-}
     ports:
       - '3000:3000'
     depends_on:

@@ -17,6 +17,8 @@ def test_happy_path(client, fake_llm) -> None:
     assert chunk["id"] == "ch_1"
     assert chunk["confidence"]["label"] == "unrated"  # no seed file in tests
     assert chunk["example"]["highlight"] is not None
+    # "Tengo muchas ganas de" inside the translation, lemma-level match on "tener".
+    assert chunk["translation_highlight"] == [0, 21]
     assert chunk["alternatives"][0]["confidence"]["label"] == "unrated"
     assert body["notes"][0]["applies_to"] == ["ch_1"]
     meta = body["meta"]
@@ -71,3 +73,39 @@ def test_meta_endpoint(client) -> None:
     assert "ES" in body["regions"]
     assert "calque" in body["note_kinds"]
     assert body["prompt_version"] == "p1"
+
+
+def test_translation_highlight_null_when_no_match(client, fake_llm, monkeypatch) -> None:
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "highlight_range", lambda text, surface: None)
+    fake_llm.responses = [make_draft()]
+    resp = post(client)
+    assert resp.status_code == 200
+    assert resp.json()["chunks"][0]["translation_highlight"] is None
+
+
+def test_cached_payload_without_translation_highlight_is_backfilled(client, fake_llm) -> None:
+    """Cache hits are served as raw dicts: entries written before the field
+    existed have no key at all. The service adds the range on read and
+    persists it, without calling the LLM."""
+    from app.pipeline import cache
+    from app.pipeline.normalize import normalize_input
+    from app.prompts import current_version
+
+    text = normalize_input("I'm really excited to go to the beach")
+    key = cache.cache_key(text, "MX", current_version(), fake_llm.model)
+    fake_llm.responses = [make_draft()]
+    first = post(client).json()
+    stale = {**first}
+    stale["chunks"] = [{k: v for k, v in c.items() if k != "translation_highlight"} for c in first["chunks"]]
+    cache.put(key, stale)
+
+    resp = post(client)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["meta"]["cached"] is True
+    assert body["chunks"][0]["translation_highlight"] == [0, 21]
+    assert len(fake_llm.calls) == 1
+    # Persisted: the stored entry now carries the field too.
+    assert cache.get(key)["chunks"][0]["translation_highlight"] == [0, 21]

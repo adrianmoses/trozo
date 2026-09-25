@@ -78,6 +78,22 @@
         "example": {
           "$ref": "#/$defs/Example"
         },
+        "translation_highlight": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Character range [start, end) of the chunk inside `translation`, computed by the service; null when no lemma-level match is found",
+          "title": "Translation Highlight"
+        },
         "confidence": {
           "$ref": "#/$defs/Confidence"
         },
