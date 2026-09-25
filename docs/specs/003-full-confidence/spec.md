@@ -3,7 +3,7 @@
 | Field   | Value      |
 | ------- | ---------- |
 | id      | 003        |
-| status  | draft      |
+| status  | approved   |
 | created | 2026-09-25 |
 
 ---
