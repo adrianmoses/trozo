@@ -5,6 +5,14 @@ import { sampleResponse } from '@trozo/schema/test/fixture'
 import { renderWithProviders } from '#/test/render'
 import { TranslatorView } from './TranslatorView'
 
+vi.mock('#/server/saved.functions', () => ({
+  saveChunkFn: vi.fn(),
+  savedIndexFn: vi.fn().mockResolvedValue({ count: 0, keys: [] }),
+  listSavedFn: vi.fn(),
+  deleteSavedFn: vi.fn(),
+  syncConfidenceFn: vi.fn(),
+}))
+
 const noop = () => {}
 
 describe('TranslatorView', () => {

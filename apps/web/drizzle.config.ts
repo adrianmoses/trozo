@@ -1,7 +1,8 @@
 import { config } from 'dotenv'
 import { defineConfig } from 'drizzle-kit'
 
-config({ path: ['.env.local', '.env'] })
+// App-local env files first, then the repo root's (where honcho reads them).
+config({ path: ['.env.local', '.env', '../../.env.local', '../../.env'] })
 
 export default defineConfig({
   out: './drizzle',
