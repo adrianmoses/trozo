@@ -11,7 +11,7 @@ See `docs/specs/` for the product overview, architecture, roadmap and per-featur
 | 001 Chunk service + seed v0 (30 items) + eval runner                                                        | implemented |
 | 002 Translator UI at `/` (dark theme, traps box, chunk cards, copy)                                         | implemented |
 | 003 Full confidence (self-consistency + OpenAI verifier, background upgrade in the UI, calibration metrics) | implemented |
-| 004 Saving + export (Postgres, `/saved`, Anki CSV / TXT)                                                    | planned     |
+| 004 Saving + export (Postgres, `/saved`, Anki CSV / TXT)                                                    | implemented |
 | 005 Seed to 120 + eval report                                                                               | planned     |
 
 ## Layout
@@ -106,7 +106,7 @@ The contract lives in the Pydantic models (`services/chunker/app/models.py`); re
 | `CHUNKER_CACHE_DIR`      | chunker             | `.cache/chunker` (relative to cwd) | Disk response cache.                                                                                              |
 | `CHUNKER_URL`            | web                 | `http://localhost:8000`            | Where the web app's server functions reach the chunk service.                                                     |
 | `CHUNKER_TOKEN`          | chunker, web, evals | unset                              | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`.                      |
-| `DATABASE_URL`           | web                 | —                                  | Postgres (used from 004).                                                                                         |
+| `DATABASE_URL`           | web                 | —                                  | Postgres for saved chunks (004). Also read by `drizzle-kit` from `apps/web` or the repo root's `.env.local`.      |
 
 ## Full stack via Docker
 
@@ -118,7 +118,7 @@ export OPENAI_API_KEY="$(grep '^OPENAI_API_KEY=' .env.local | cut -d= -f2-)"
 docker compose up --build
 ```
 
-Starts web (`:3000`), the chunk service (`:8000`, health at `/v1/health`), and Postgres 16 (`:5432`, user/password/db `trozo`). Images do not hot-reload; use `pnpm dev:all` for development.
+Starts web (`:3000`), the chunk service (`:8000`, health at `/v1/health`), and Postgres 16 (`:5432`, user/password/db `trozo`). A one-shot `migrate` service applies the Drizzle migrations before web starts, so an empty database needs no manual step. Images do not hot-reload; use `pnpm dev:all` for development.
 
 ## Database
 
@@ -130,4 +130,24 @@ pnpm --filter web db:migrate    # apply migrations
 pnpm --filter web db:studio     # inspect
 ```
 
-The `saved_chunks` table arrives with feature 004. The response cache is a disk cache inside the chunk service, not a database table.
+For `pnpm dev:all`, run Postgres (e.g. `docker compose up -d postgres`), point `DATABASE_URL` in `.env.local` at it (`postgres://trozo:trozo@localhost:5432/trozo`) and run `db:migrate` once.
+
+`saved_chunks` (004) holds saved chunks and regional variants, one row per Anki card, deduplicated on surface + Spanish example (`UNIQUE NULLS NOT DISTINCT`, so Postgres 15+). The response cache is a disk cache inside the chunk service, not a database table.
+
+The repository tests in `apps/web/src/server/saved.server.test.ts` run against a real Postgres when `TEST_DATABASE_URL` is set (each run migrates and drops a throwaway schema) and are skipped otherwise:
+
+```bash
+TEST_DATABASE_URL=postgres://trozo:trozo@localhost:5432/trozo pnpm --filter web test
+```
+
+## Export to Anki
+
+Save chunks or single regional variants from the cards, then export from `/saved` (the current region/tag filters apply) or with "Export to Anki" in the header (Basic, everything). Files are UTF-8 with a BOM.
+
+| Button       | Route                      | Anki note type | Columns                                                                                               |
+| ------------ | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------- |
+| Anki (Basic) | `/api/export?format=csv`   | Basic          | `Front` (English example), `Back` (Spanish example, chunk in bold, pattern and regions), `Tags`       |
+| Anki (Cloze) | `/api/export?format=cloze` | Cloze          | `Text` (Spanish example with `{{c1::chunk}}`), `Extra` (English example, pattern and regions), `Tags` |
+| TXT          | `/api/export?format=txt`   | —              | One line per item: `pattern — example_es — regions`                                                   |
+
+In Anki (2.1.54+): File → Import and pick the file. The CSVs start with Anki file headers (`#separator:Comma`, `#html:true`, `#notetype:Basic` or `Cloze`, `#columns:…`, `#tags column:3`), so the separator, HTML, note type and Tags column are preset; choose a deck and import. If your note types are renamed, pick the right one in the dialog. Tags are `trozo`, `region::<R>` and `register::<register>`, so Anki shows them as a hierarchy. In a spreadsheet the `#` lines show up as the first rows.
