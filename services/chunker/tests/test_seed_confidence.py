@@ -46,11 +46,13 @@ def test_seed_match_with_optional_word_high() -> None:
 def test_default_seed_path_points_at_the_repo_seed_file() -> None:
     from pathlib import Path
 
-    from app.pipeline.seed import DEFAULT_SEED_PATH
+    from app.pipeline.seed import default_seed_path
 
     repo_root = Path(__file__).resolve().parents[3]
-    assert DEFAULT_SEED_PATH.resolve() == repo_root / "evals" / "seed" / "seed_v0.yaml"
-    assert DEFAULT_SEED_PATH.is_file()
+    path = default_seed_path()
+    assert path is not None
+    assert path.resolve() == repo_root / "evals" / "seed" / "seed_v0.yaml"
+    assert path.is_file()
 
 
 def test_seed_index_loads_without_env_override(monkeypatch) -> None:
@@ -65,3 +67,47 @@ def test_seed_index_loads_without_env_override(monkeypatch) -> None:
         assert "ES" in (index.regions_for(lemma_key("echar de menos")) or set())
     finally:
         load_seed_index.cache_clear()
+
+
+# --- bug 002: chunker image crashed on import (written before the fix) ---
+
+
+def test_default_seed_path_is_none_in_the_image_layout() -> None:
+    """In the image the module is /app/app/pipeline/seed.py: too shallow for
+    the repo layout. Resolving the default must not raise."""
+    from pathlib import Path
+
+    from app.pipeline.seed import default_seed_path
+
+    assert default_seed_path(Path("/app/app/pipeline/seed.py")) is None
+
+
+def test_seed_index_uses_env_path_when_no_repo_default(monkeypatch, tmp_path) -> None:
+    from app.pipeline import seed as seed_module
+    from app.pipeline.spanish import lemma_key
+
+    seed = tmp_path / "seed.yaml"
+    seed.write_text(
+        "- id: x\n  expected_chunks:\n    - surface: echar de menos\n      regions: [ES]\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(seed_module, "default_seed_path", lambda *_: None)
+    monkeypatch.setenv("CHUNKER_SEED_PATH", str(seed))
+    seed_module.load_seed_index.cache_clear()
+    try:
+        index = seed_module.load_seed_index()
+        assert index.regions_for(lemma_key("echar de menos")) == {"ES"}
+    finally:
+        seed_module.load_seed_index.cache_clear()
+
+
+def test_seed_index_is_empty_without_env_or_repo_default(monkeypatch) -> None:
+    from app.pipeline import seed as seed_module
+
+    monkeypatch.setattr(seed_module, "default_seed_path", lambda *_: None)
+    monkeypatch.delenv("CHUNKER_SEED_PATH", raising=False)
+    seed_module.load_seed_index.cache_clear()
+    try:
+        assert len(seed_module.load_seed_index()) == 0
+    finally:
+        seed_module.load_seed_index.cache_clear()
