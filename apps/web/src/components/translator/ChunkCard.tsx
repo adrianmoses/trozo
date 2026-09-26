@@ -1,11 +1,13 @@
-import type { Chunk, Note } from '@trozo/schema'
+import type { Chunk, ChunkResponse, Note, Region } from '@trozo/schema'
 import { cardDomId } from '#/lib/flash-card'
 import { cardNumber } from '#/lib/labels'
+import { toSavedRow } from '#/lib/saved'
 import { cn } from '#/lib/utils'
 import { ConfidenceLabel } from './ConfidenceLabel'
 import { CopyButton } from './CopyButton'
 import { ExampleSentence } from './ExampleSentence'
 import { RegisterPill, SlotPill } from './Pills'
+import { SaveButton } from './SaveButton'
 import { VariantsList } from './VariantsList'
 
 export function ChunkCard({
@@ -13,11 +15,14 @@ export function ChunkCard({
   index,
   notes,
   pending = false,
+  source,
 }: {
   chunk: Chunk
   index: number
   notes: Note[]
   pending?: boolean
+  /** The result this card belongs to; enables Save (feature 004). */
+  source?: { response: ChunkResponse; region: Region }
 }) {
   const low = chunk.confidence.label === 'low'
   const avoids = notes.filter((note) => note.applies_to?.includes(chunk.id))
@@ -66,9 +71,16 @@ export function ChunkCard({
           avoids: {avoids.map((note) => note.avoid).join(' · ')}
         </p>
       ) : null}
-      <VariantsList alternatives={chunk.alternatives ?? []} pending={pending} />
-      <footer className="mt-auto border-t border-line pt-4">
-        <CopyButton chunk={chunk} />
+      <VariantsList
+        alternatives={chunk.alternatives ?? []}
+        pending={pending}
+        saveRow={source ? (alt) => toSavedRow(source, chunk, alt) : undefined}
+      />
+      <footer className="mt-auto flex gap-2 border-t border-line pt-4">
+        <div className="flex-1">
+          <CopyButton chunk={chunk} />
+        </div>
+        {source ? <SaveButton row={toSavedRow(source, chunk)} /> : null}
       </footer>
     </article>
   )

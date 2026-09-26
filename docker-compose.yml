@@ -30,6 +30,21 @@ services:
     ports:
       - '8000:8000'
 
+  # One-shot: applies apps/web/drizzle migrations, then exits. Reuses the web
+  # Dockerfile's build stage, which has drizzle-kit; the runtime image does not.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: build
+    working_dir: /repo/apps/web
+    command: ['pnpm', 'db:migrate']
+    environment:
+      DATABASE_URL: postgres://trozo:trozo@postgres:5432/trozo
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   web:
     build:
       context: .
@@ -43,6 +58,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       chunker:
         condition: service_started
 

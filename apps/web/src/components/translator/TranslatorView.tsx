@@ -16,7 +16,15 @@ export type TranslatorState =
   | { kind: 'error'; error: ChunkServiceError }
   | { kind: 'result'; data: ChunkResponse }
 
-function Result({ data, pending }: { data: ChunkResponse; pending: boolean }) {
+function Result({
+  data,
+  region,
+  pending,
+}: {
+  data: ChunkResponse
+  region: Region
+  pending: boolean
+}) {
   const notes = data.notes ?? []
   const count = data.chunks.length
   return (
@@ -49,6 +57,7 @@ function Result({ data, pending }: { data: ChunkResponse; pending: boolean }) {
                 index={index}
                 notes={notes}
                 pending={pending}
+                source={{ response: data, region }}
               />
             ))}
           </div>
@@ -99,7 +108,11 @@ export function TranslatorView({
       >
         {state.kind === 'loading' ? <ResultSkeleton /> : null}
         {state.kind === 'result' ? (
-          <Result data={state.data} pending={confidencePending} />
+          <Result
+            data={state.data}
+            region={region}
+            pending={confidencePending}
+          />
         ) : null}
       </section>
     </main>

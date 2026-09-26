@@ -2,7 +2,11 @@ import { queryOptions } from '@tanstack/react-query'
 import type { QueryClient } from '@tanstack/react-query'
 import type { ChunkResponse, Region } from '@trozo/schema'
 import type { ChunkResult } from '#/lib/chunker.server'
+import { savedKey, settledItems } from '#/lib/saved'
+import { SAVED_INDEX_KEY, savedIndexQueryOptions } from '#/lib/saved-query'
+import type { SavedIndex } from '#/lib/saved-query'
 import { chunkFn, chunkFullFn } from '#/server/chunk.functions'
+import { syncConfidenceFn } from '#/server/saved.functions'
 
 type Input = { q: string; region: Region }
 
@@ -42,8 +46,10 @@ export function hasUnrated(data: ChunkResponse): boolean {
 
 /** Background full-confidence call (feature 003). On success it writes the
  * settled result into the fast query's cache entry, so the page and later
- * back/forward navigation show settled labels without another request. On
- * failure the fast data is left untouched. */
+ * back/forward navigation show settled labels without another request, and
+ * saved items from this result get their settled labels (feature 004). This
+ * runs in the query function, not a component, so it completes even after
+ * the user has moved on. On failure the fast data is left untouched. */
 export function chunkFullQueryOptions(
   input: Input & { enabled: boolean },
   queryClient: QueryClient,
@@ -56,6 +62,7 @@ export function chunkFullQueryOptions(
       })
       if (result.ok) {
         queryClient.setQueryData<ChunkResult>(chunkQueryKey(input), result)
+        await syncSavedConfidence(result.data, queryClient)
       }
       return result
     },
@@ -63,4 +70,25 @@ export function chunkFullQueryOptions(
     staleTime: Infinity,
     retry: false,
   })
+}
+
+/** Push settled labels for any saved items in this result. Rows that are
+ * already settled are left alone server-side, so this is safe to repeat. A
+ * failure here never fails the full query: the rows just stay `unrated`. */
+export async function syncSavedConfidence(
+  data: ChunkResponse,
+  queryClient: QueryClient,
+): Promise<void> {
+  try {
+    const index =
+      queryClient.getQueryData<SavedIndex>(SAVED_INDEX_KEY) ??
+      (await queryClient.fetchQuery(savedIndexQueryOptions()))
+    const saved = new Set(index.keys)
+    const items = settledItems(data).filter((item) =>
+      saved.has(savedKey(item.surface, item.example_es)),
+    )
+    if (items.length > 0) await syncConfidenceFn({ data: items })
+  } catch {
+    // Best effort; see above.
+  }
 }

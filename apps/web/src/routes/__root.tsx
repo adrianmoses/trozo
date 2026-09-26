@@ -11,6 +11,7 @@ import { Toaster } from '#/components/ui/sonner'
 import { TooltipProvider } from '#/components/ui/tooltip'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import { savedIndexQueryOptions } from '#/lib/saved-query'
 
 import appCss from '../styles.css?url'
 
@@ -41,6 +42,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
   }),
+  // Server-render the header's "Saved · n" with the real count. prefetchQuery
+  // never throws, so a database outage cannot take every page down.
+  loader: ({ context }) =>
+    context.queryClient.prefetchQuery(savedIndexQueryOptions()),
   shellComponent: RootDocument,
 })
 

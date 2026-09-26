@@ -6,7 +6,7 @@
 | ------- | ---------- |
 | status  | approved   |
 | created | 2026-09-23 |
-| revised | 2026-09-25 |
+| revised | 2026-09-26 |
 
 ## System Overview <!-- required -->
 
@@ -26,7 +26,7 @@ flowchart LR
 
 ## Component Map <!-- required -->
 
-- **`apps/web`** — Translator route `/` (query string `?q=…&region=…` for shareable results; last region remembered in a cookie), `/saved` route with filters and export buttons (004), server functions (`chunkFn` fast call, `chunkFullFn` background full-confidence call, save in 004), streamed export route (`/api/export?format=csv|txt`, 004), Drizzle schema for `saved_chunks` (004).
+- **`apps/web`** — Translator route `/` (query string `?q=…&region=…` for shareable results; last region remembered in a cookie), `/saved` route with filters and export buttons (004), server functions (`chunkFn` fast call, `chunkFullFn` background full-confidence call; saved chunks: `saveChunkFn`, `savedIndexFn`, `listSavedFn`, `deleteSavedFn`, `syncConfidenceFn`), streamed export route (`/api/export?format=csv|cloze|txt`), Drizzle schema and committed migrations for `saved_chunks` (applied by a one-shot `migrate` Compose service).
 - **`services/chunker`** — `POST /v1/chunk`, `GET /v1/health`, `GET /v1/meta`. Generation pipeline as pure functions: normalize → cache lookup → structured LLM generate → validate/repair → seed match → fast confidence; full mode rescoring (`app/pipeline/full.py`): samples → consistency → verifier → labels. Versioned prompt files (`prompts/pN.md`). Dev scripts: `export_schema.py`, `poison.py`, `spike_full.py`.
 - **`evals/`** — YAML seed set (30 items today, ~120 target, four tiers: simple, high regional variance, advanced, calque traps) and poison claims for the verifier; runner (`run.py --prompt --split --confidence fast|full --verifier`), threshold sweep (`tune.py`); JSONL raw results, summary JSON and a Markdown report with metric deltas per run.
 - **`packages/schema`** — JSON Schema exported from the Pydantic models; generates TS types so the API contract has one source of truth.
@@ -36,7 +36,7 @@ flowchart LR
 1. User submits a phrase (1–200 chars) with a preferred region → `chunkFn` calls the chunk service with `confidence_mode: fast`.
 2. Service normalizes input, checks the disk cache (key = sha256(normalized text, region, prompt_version, model)), makes one structured-output call to the primary model (no sampling parameters; depth set by `effort`), validates and repairs (lemma-level checks via spaCy `es_core_news_sm`, one retry when repair leaves no chunks), matches against the seed list, and attaches fast confidence.
 3. Fast result renders immediately: seed-matched chunks are `high` ("verified"), the rest `unrated` with a spinner. `chunkFullFn` then requests `confidence_mode: full`, which rescores the same fast response (chunk ids and text never change): 5 further samples from the primary and one batched verifier call run concurrently. The result is written into the fast query's cache entry, so labels settle in place and back/forward stay instant.
-4. Save writes the chunk to `saved_chunks`; export streams Anki-ready CSV (UTF-8 with BOM) or TXT from a server route (004).
+4. Save writes the chunk (or one regional variant) to `saved_chunks`, deduplicated on surface + Spanish example. If full confidence settles after the save, the saved `unrated` label is updated to the settled one (only ever `unrated` → settled). Export streams Anki Basic or Cloze CSV (UTF-8 BOM, then Anki `#` file headers) or TXT from a server route, paging rows from Postgres.
 
 Confidence is derived from signals (seed match, consistency share, verifier agreement), never asked of the model. It is scored per chunk and per alternative; per-region-tag confidence is not implemented. Rules, first match wins:
 
@@ -54,7 +54,7 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 
 - **Primary LLM:** Anthropic Claude Sonnet 5 (`claude-sonnet-5`) for generation and self-consistency samples, via `messages.parse` structured output. It rejects temperature/top-p/top-k, so there is no sampling-temperature lever; self-consistency uses default sampling.
 - **Verifier LLM:** OpenAI `gpt-5.4-mini`, a different vendor so errors are less correlated; answers yes/no/unsure per claim via structured output. Optional: without `OPENAI_API_KEY`, full mode uses consistency only.
-- Postgres (saved chunks, from 004).
+- Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`).
 - spaCy with `es_core_news_sm` for lemma-level validation, seed matching and consistency matching.
 - Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development; Fly.io/Railway-style host for deploy.
 
@@ -68,6 +68,7 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - The full-sentence `translation` must contain every chunk's surface (lemma-level); the service returns `translation_highlight` ranges so the UI can underline them.
 - Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is to be measured in 005).
 - Full mode costs about six LLM calls per new phrase (five primary, one verifier); there is no cost cap.
+- TanStack Start returns server-function errors as HTTP 200 with the error serialized in the body; a 200 in the network tab is not proof of success, so client error handlers log the cause.
 
 ## Open Decisions <!-- optional -->
 
@@ -83,3 +84,4 @@ Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, 
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-23 | Initial architecture                                                                                                                                                          |
 | 2026-09-25 | Post-003 refresh: models and no-temperature constraint, disk cache in the chunker, full-mode design and tuned thresholds, `unrated` rule, relabel-on-read, resolved decisions |
+| 2026-09-26 | 004: saved-chunk server functions, confidence sync, `cloze` export with Anki file headers, `migrate` service, Postgres 15+, Start error-status note                           |
