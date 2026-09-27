@@ -1,0 +1,194 @@
+{
+  "stamp": "20260925T213812Z (re-scored)",
+  "prompt": "p1",
+  "split": "test",
+  "mode": "full",
+  "service_model": "claude-sonnet-5",
+  "verifier_model": "gpt-5.4-mini",
+  "thresholds": {
+    "t_high": 1.0,
+    "t_med": 0.6
+  },
+  "items": 15,
+  "chunk_recall": 1.0,
+  "calque_rate": 0.0,
+  "region": {
+    "entries": 63,
+    "matched": 58,
+    "unmatched_excluded": 5,
+    "tags": 66,
+    "region_precision": 0.8939393939393939,
+    "neutral_targets": 36,
+    "over_tagged": 3,
+    "over_tag_rate": 0.08333333333333333
+  },
+  "check_mix": {
+    "advanced": {
+      "items": 4,
+      "native": 0,
+      "reference": 3,
+      "author": 4,
+      "unchecked": 0
+    },
+    "calque": {
+      "items": 3,
+      "native": 0,
+      "reference": 3,
+      "author": 3,
+      "unchecked": 0
+    },
+    "regional": {
+      "items": 4,
+      "native": 0,
+      "reference": 4,
+      "author": 4,
+      "unchecked": 0
+    },
+    "simple": {
+      "items": 4,
+      "native": 0,
+      "reference": 2,
+      "author": 4,
+      "unchecked": 0
+    }
+  },
+  "confidence": {
+    "chunk": {
+      "n": 24,
+      "base_rate": 0.9166666666666666,
+      "high_precision_masked": 1.0,
+      "high_coverage_masked": 0.6666666666666666,
+      "buckets_masked": {
+        "high": {
+          "n": 16,
+          "accuracy": 1.0
+        },
+        "med": {
+          "n": 8,
+          "accuracy": 0.75
+        }
+      },
+      "consistency_hist": {
+        "0.4": 1,
+        "0.6": 1,
+        "1.0": 22
+      },
+      "verifier_agree_rate": 0.75,
+      "served_labels": {
+        "high": 19,
+        "med": 5
+      }
+    },
+    "alt": {
+      "n": 39,
+      "base_rate": 0.9230769230769231,
+      "high_precision_masked": 1.0,
+      "high_coverage_masked": 0.23076923076923078,
+      "buckets_masked": {
+        "high": {
+          "n": 9,
+          "accuracy": 1.0
+        },
+        "med": {
+          "n": 25,
+          "accuracy": 0.96
+        },
+        "low": {
+          "n": 5,
+          "accuracy": 0.6
+        }
+      },
+      "consistency_hist": {
+        "0.0": 4,
+        "0.2": 4,
+        "0.4": 4,
+        "0.6": 5,
+        "0.8": 7,
+        "1.0": 15
+      },
+      "verifier_agree_rate": 0.717948717948718,
+      "served_labels": {
+        "med": 18,
+        "low": 5,
+        "high": 16
+      }
+    }
+  },
+  "per_item": [
+    {
+      "id": "hungry-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "about-to-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "apply-job-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "attention-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "question-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hot-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "drive-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "job-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "computer-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "concerned-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "soup-cold-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "worth-it-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "good-time-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "decision-01",
+      "recall": 1.0,
+      "failing": false
+    }
+  ]
+}

@@ -6,7 +6,7 @@
 | ------- | ---------- |
 | status  | approved   |
 | created | 2026-09-23 |
-| revised | 2026-09-26 |
+| revised | 2026-09-27 |
 
 ## System Overview <!-- required -->
 
@@ -28,7 +28,7 @@ flowchart LR
 
 - **`apps/web`** — Translator route `/` (query string `?q=…&region=…` for shareable results; last region remembered in a cookie), `/saved` route with filters and export buttons (004), server functions (`chunkFn` fast call, `chunkFullFn` background full-confidence call; saved chunks: `saveChunkFn`, `savedIndexFn`, `listSavedFn`, `deleteSavedFn`, `syncConfidenceFn`), streamed export route (`/api/export?format=csv|cloze|txt`), Drizzle schema and committed migrations for `saved_chunks` (applied by a one-shot `migrate` Compose service).
 - **`services/chunker`** — `POST /v1/chunk`, `GET /v1/health`, `GET /v1/meta`. Generation pipeline as pure functions: normalize → cache lookup → structured LLM generate → validate/repair → seed match → fast confidence; full mode rescoring (`app/pipeline/full.py`): samples → consistency → verifier → labels. Versioned prompt files (`prompts/pN.md`). Dev scripts: `export_schema.py`, `poison.py`, `spike_full.py`.
-- **`evals/`** — YAML seed set (30 items today, ~120 target, four tiers: simple, high regional variance, advanced, calque traps) and poison claims for the verifier; runner (`run.py --prompt --split --confidence fast|full --verifier`), threshold sweep (`tune.py`); JSONL raw results, summary JSON and a Markdown report with metric deltas per run.
+- **`evals/`** — YAML seed set (`seed_v1.yaml`, 120 items, four tiers: simple, high regional variance, advanced, calque traps; `accepted:` and `also_valid:` answers and a `checked:` field per item, 005) and poison claims for the verifier; runner (`run.py --prompt --split --confidence fast|full --verifier`), offline re-scoring (`rescore.py`), threshold sweep (`tune.py`); metrics include region precision and over-tagging; JSONL raw results, summary JSON and a Markdown report with metric deltas per run; reports behind published numbers in `evals/reports/`.
 - **`packages/schema`** — JSON Schema exported from the Pydantic models; generates TS types so the API contract has one source of truth.
 
 ## Data Flow <!-- required -->
@@ -46,7 +46,7 @@ Confidence is derived from signals (seed match, consistency share, verifier agre
 4. Some signal present → `low`.
 5. No signal (fast mode without a seed match, or full mode with every signal missing) → `unrated`.
 
-Thresholds are tuned on the dev split: **T_high = 1.0** (with 5 samples, all must agree) and **T_med = 0.6** (003).
+Thresholds are tuned on the dev split: **T_high = 1.0** (with 5 samples, all must agree) and **T_med = 0.6** (003; re-checked and kept on the 120-item seed in 005).
 
 Signals are durable; labels and the seed signal are recomputed whenever a cached response is served, so re-tuning thresholds or growing the seed needs no cache eviction.
 
@@ -64,19 +64,18 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - Confidence is always derived from signals — the model is never asked to rate itself.
 - Every pipeline step is a pure function so evals can test steps in isolation.
 - Prompts are versioned files; `prompt_version` is logged in every response and eval run. Editing a prompt in place does not invalidate the cache: bump the version.
-- The disk response cache is keyed by hash(input, region, prompt_version, model); full-mode entries add samples, verifier model and the perturbation flag. It makes eval re-runs and re-scoring free. Contract fields added later must be optional, or backfilled on read, because cached responses are served as stored.
+- The disk response cache is keyed by hash(input, region, prompt_version, model, matcher version); full-mode entries add samples, verifier model and the perturbation flag. Bump `MATCHER_VERSION` when validation or matching changes (bug 003); chunks validation drops are listed in `meta.dropped`. It makes eval re-runs and re-scoring free. Contract fields added later must be optional, or backfilled on read, because cached responses are served as stored.
 - The full-sentence `translation` must contain every chunk's surface (lemma-level); the service returns `translation_highlight` ranges so the UI can underline them.
-- Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is to be measured in 005).
+- Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is measured by the evals since 005: 0.05 on test with p1).
 - Full mode costs about six LLM calls per new phrase (five primary, one verifier); there is no cost cap.
 - TanStack Start returns server-function errors as HTTP 200 with the error serialized in the body; a 200 in the network tab is not proof of success, so client error handlers log the cause.
 
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
-- Thresholds were tuned on 20 dev chunks and 30 alternatives; re-tune on the 120-item seed in 005.
-- The seed format has one answer per expected chunk, which understates precision for valid alternatives; 005 should add accepted variants.
+- Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
-Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003).
+Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
 
 ## Revision History
 
@@ -85,3 +84,4 @@ Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, 
 | 2026-09-23 | Initial architecture                                                                                                                                                          |
 | 2026-09-25 | Post-003 refresh: models and no-temperature constraint, disk cache in the chunker, full-mode design and tuned thresholds, `unrated` rule, relabel-on-read, resolved decisions |
 | 2026-09-26 | 004: saved-chunk server functions, confidence sync, `cloze` export with Anki file headers, `migrate` service, Postgres 15+, Start error-status note                           |
+| 2026-09-27 | 005 and bug 003: 120-item seed with accepted/also-valid answers, region metrics, thresholds kept, matcher version in the cache key, `meta.dropped`, open decisions resolved   |

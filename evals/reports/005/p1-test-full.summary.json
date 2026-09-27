@@ -1,0 +1,426 @@
+{
+  "stamp": "20260927T080923Z",
+  "prompt": "p1",
+  "split": "test",
+  "mode": "full",
+  "service_model": "claude-sonnet-5",
+  "verifier_model": "gpt-5.4-mini",
+  "thresholds": {
+    "t_high": 1.0,
+    "t_med": 0.6
+  },
+  "items": 60,
+  "chunk_recall": 0.8333,
+  "calque_rate": 0.0,
+  "region": {
+    "entries": 206,
+    "matched": 111,
+    "unmatched_excluded": 95,
+    "tags": 129,
+    "region_precision": 0.8914728682170543,
+    "neutral_targets": 76,
+    "over_tagged": 4,
+    "over_tag_rate": 0.05263157894736842
+  },
+  "check_mix": {
+    "advanced": {
+      "items": 15,
+      "native": 0,
+      "reference": 3,
+      "author": 15,
+      "unchecked": 0
+    },
+    "calque": {
+      "items": 9,
+      "native": 0,
+      "reference": 3,
+      "author": 9,
+      "unchecked": 0
+    },
+    "regional": {
+      "items": 18,
+      "native": 0,
+      "reference": 5,
+      "author": 18,
+      "unchecked": 0
+    },
+    "simple": {
+      "items": 18,
+      "native": 0,
+      "reference": 2,
+      "author": 18,
+      "unchecked": 0
+    }
+  },
+  "confidence": {
+    "chunk": {
+      "n": 88,
+      "base_rate": 0.6931818181818182,
+      "high_precision_masked": 0.8253968253968254,
+      "high_coverage_masked": 0.7159090909090909,
+      "buckets_masked": {
+        "high": {
+          "n": 63,
+          "accuracy": 0.8253968253968254
+        },
+        "med": {
+          "n": 24,
+          "accuracy": 0.375
+        },
+        "low": {
+          "n": 1,
+          "accuracy": 0.0
+        }
+      },
+      "consistency_hist": {
+        "0.0": 1,
+        "0.4": 2,
+        "0.6": 2,
+        "0.8": 6,
+        "1.0": 77
+      },
+      "verifier_agree_rate": 0.7954545454545454,
+      "served_labels": {
+        "high": 72,
+        "med": 15,
+        "low": 1
+      }
+    },
+    "alt": {
+      "n": 118,
+      "base_rate": 0.423728813559322,
+      "high_precision_masked": 0.6458333333333334,
+      "high_coverage_masked": 0.4067796610169492,
+      "buckets_masked": {
+        "high": {
+          "n": 48,
+          "accuracy": 0.6458333333333334
+        },
+        "med": {
+          "n": 61,
+          "accuracy": 0.29508196721311475
+        },
+        "low": {
+          "n": 9,
+          "accuracy": 0.1111111111111111
+        }
+      },
+      "consistency_hist": {
+        "0.0": 9,
+        "0.2": 11,
+        "0.4": 9,
+        "0.6": 18,
+        "0.8": 17,
+        "1.0": 54
+      },
+      "verifier_agree_rate": 0.8135593220338984,
+      "served_labels": {
+        "med": 53,
+        "high": 57,
+        "low": 8
+      }
+    }
+  },
+  "per_item": [
+    {
+      "id": "hungry-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "about-to-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "apply-job-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "attention-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "question-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hot-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "drive-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "job-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "computer-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "concerned-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "soup-cold-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "worth-it-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "good-time-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "decision-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "peach-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "strawberry-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "phone-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "swimsuit-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "kids-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "party-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "glasses-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hurry-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-trip-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "whats-up-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "delicious-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "pickup-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "bill-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "nice-meet-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "embarrassed-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "actually-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sensible-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "make-sense-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "fall-in-love-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "age-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "before-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "when-future-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "ready-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "used-to-it-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "not-feel-like-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "give-up-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "take-care-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "think-about-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "married-to-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "cost-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "ice-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cold-person-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "scared-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "windy-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cold-outside-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "birthday-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "wait-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "break-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "love-song-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "welcome-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bless-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "my-turn-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "how-are-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "light-off-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "shower-01",
+      "recall": 1.0,
+      "failing": false
+    }
+  ]
+}

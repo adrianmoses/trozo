@@ -1,0 +1,199 @@
+{
+  "stamp": "20260925T213812Z (re-scored)",
+  "prompt": "p1",
+  "split": "dev",
+  "mode": "full",
+  "service_model": "claude-sonnet-5",
+  "verifier_model": "gpt-5.4-mini",
+  "thresholds": {
+    "t_high": 1.0,
+    "t_med": 0.6
+  },
+  "items": 15,
+  "chunk_recall": 0.9778,
+  "calque_rate": 0.0,
+  "region": {
+    "entries": 50,
+    "matched": 22,
+    "unmatched_excluded": 28,
+    "tags": 27,
+    "region_precision": 0.8518518518518519,
+    "neutral_targets": 11,
+    "over_tagged": 1,
+    "over_tag_rate": 0.09090909090909091
+  },
+  "check_mix": {
+    "advanced": {
+      "items": 3,
+      "native": 0,
+      "reference": 1,
+      "author": 3,
+      "unchecked": 0
+    },
+    "calque": {
+      "items": 2,
+      "native": 0,
+      "reference": 2,
+      "author": 2,
+      "unchecked": 0
+    },
+    "regional": {
+      "items": 5,
+      "native": 0,
+      "reference": 5,
+      "author": 5,
+      "unchecked": 0
+    },
+    "simple": {
+      "items": 5,
+      "native": 0,
+      "reference": 4,
+      "author": 5,
+      "unchecked": 0
+    }
+  },
+  "confidence": {
+    "chunk": {
+      "n": 20,
+      "base_rate": 0.7,
+      "high_precision_masked": 1.0,
+      "high_coverage_masked": 0.65,
+      "buckets_masked": {
+        "high": {
+          "n": 13,
+          "accuracy": 1.0
+        },
+        "med": {
+          "n": 6,
+          "accuracy": 0.16666666666666666
+        },
+        "low": {
+          "n": 1,
+          "accuracy": 0.0
+        }
+      },
+      "consistency_hist": {
+        "0.4": 1,
+        "0.8": 2,
+        "1.0": 17
+      },
+      "verifier_agree_rate": 0.7,
+      "served_labels": {
+        "high": 13,
+        "med": 6,
+        "low": 1
+      }
+    },
+    "alt": {
+      "n": 30,
+      "base_rate": 0.26666666666666666,
+      "high_precision_masked": 0.5384615384615384,
+      "high_coverage_masked": 0.43333333333333335,
+      "buckets_masked": {
+        "high": {
+          "n": 13,
+          "accuracy": 0.5384615384615384
+        },
+        "med": {
+          "n": 16,
+          "accuracy": 0.0625
+        },
+        "low": {
+          "n": 1,
+          "accuracy": 0.0
+        }
+      },
+      "consistency_hist": {
+        "0.0": 1,
+        "0.2": 1,
+        "0.4": 4,
+        "0.6": 1,
+        "0.8": 7,
+        "1.0": 16
+      },
+      "verifier_agree_rate": 0.8,
+      "served_labels": {
+        "high": 14,
+        "med": 15,
+        "low": 1
+      }
+    }
+  },
+  "per_item": [
+    {
+      "id": "miss-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "popcorn-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "up-to-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "careful-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "right-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "shopping-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "walk-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "car-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cool-01",
+      "recall": 0.6666666666666666,
+      "failing": true
+    },
+    {
+      "id": "juice-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hangout-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hope-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "just-ate-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "realize-01",
+      "recall": 1.0,
+      "failing": false
+    }
+  ]
+}

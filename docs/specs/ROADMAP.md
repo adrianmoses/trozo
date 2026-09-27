@@ -18,7 +18,7 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 | 002 | Translator UI (input bar, full translation, watch-out box, chunk cards, notes, copy; `fast` confidence from seed)             | implemented | [spec](002-translator-ui/spec.md)        |
 | 003 | Full confidence (self-consistency + verifier wired; thresholds tuned on `dev` split)                                          | implemented | [spec](003-full-confidence/spec.md)      |
 | 004 | Saving + export (Postgres `saved_chunks`, `/saved` route, Anki CSV and TXT export)                                            | implemented | [spec](004-saving-export/spec.md)        |
-| 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)       | planned     | —                                        |
+| 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)       | implemented | [spec](005-seed-eval-report/spec.md)     |
 
 ## Status Values
 
@@ -41,3 +41,5 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 | 2026-09-25 | Docs refresh after 003 (README, ARCHITECTURE, OVERVIEW) |
 | 2026-09-26 | 004 spec drafted, status in-progress                    |
 | 2026-09-26 | 004 implemented (decision record complete)              |
+| 2026-09-26 | 005 spec drafted, status in-progress                    |
+| 2026-09-27 | 005 implemented (decision record complete)              |
