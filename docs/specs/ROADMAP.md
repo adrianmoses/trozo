@@ -26,7 +26,7 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 
 ## Production deployment (006–009)
 
-Target: a custom domain, **Neon** for Postgres, **Cloudflare** for hosting. The items run in order: 006 makes the code deployable, 007 and 008 stand up the two services, and 009 automates it. Each gets its own spec, and 006's spec revises the deploy lines in OVERVIEW and ARCHITECTURE, which still say Fly.io/Railway.
+Target: a custom domain, **Neon** for Postgres, **Cloudflare** for hosting. The items run in order: 006 makes the code deployable, 007 and 008 stand up the two services, and 009 automates it. Each gets its own spec. OVERVIEW and ARCHITECTURE already describe this target topology as planned.
 
 Constraints each spec must settle:
 
