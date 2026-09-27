@@ -14,10 +14,12 @@ Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one 
 
 **Production topology (planned, roadmap 006–009).** Locally everything runs in Docker Compose. In production:
 
-- The web app runs on **Cloudflare Workers** (TanStack Start with a Cloudflare build preset) on the custom domain, behind **Cloudflare Access**.
-- The chunk service runs on **Cloudflare Containers**, reachable only from the web Worker through a service binding plus `CHUNKER_TOKEN`, never from the public internet.
-- Postgres is **Neon** (a production branch, with branches for previews). Drizzle uses Neon's serverless driver or Hyperdrive in Workers, and node-postgres locally.
-- The response cache moves off container disk to R2 or KV.
+- Both services run on **Fly.io** from their existing Docker images, as two Fly apps in the same organization and region.
+- The web app is the only public entry point. The custom domain is on **Cloudflare** (DNS proxied to Fly) behind **Cloudflare Access**, and the web app rejects any request without a valid Access JWT (`Cf-Access-Jwt-Assertion`), so the app's `*.fly.dev` hostname can't bypass Access.
+- The chunk service has no public IP. The web app reaches it over Fly's private network (Flycast) with `CHUNKER_TOKEN`.
+- Postgres is **Neon** (a production branch, with a branch per preview). Drizzle keeps node-postgres everywhere; production uses Neon's pooled connection string.
+- The response cache stays on disk, on a Fly volume attached to the chunker.
+- Migrations run as the web app's Fly `release_command`, before the new version takes traffic.
 - The eval CLI keeps running against a local chunker.
 
 ```mermaid
@@ -65,7 +67,8 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`): Docker `postgres:16` locally, **Neon** in production (planned).
 - spaCy with `es_core_news_sm` for lemma-level validation, seed matching and consistency matching.
 - Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development.
-- **Cloudflare** for production (planned, 006–009): Workers (web), Containers (chunk service), R2 or KV (response cache), DNS/TLS for the custom domain, and Access (authentication in front of the site).
+- **Fly.io** for production (planned, 006–009): both services as Fly apps, private networking between them, a volume for the chunker's response cache, and per-PR preview apps.
+- **Cloudflare** for DNS/TLS on the custom domain and Access (authentication in front of the site); it does not host code.
 
 ## Key Constraints <!-- required -->
 
@@ -77,23 +80,24 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - The full-sentence `translation` must contain every chunk's surface (lemma-level); the service returns `translation_highlight` ranges so the UI can underline them.
 - Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is measured by the evals since 005: 0.05 on test with p1).
 - Full mode costs about six LLM calls per new phrase (five primary, one verifier); there is no cost cap.
-- Production has no app-level auth (OVERVIEW non-goal), so the whole domain must sit behind Cloudflare Access, and the chunk service must not be publicly reachable: LLM keys and saved chunks are otherwise open to anyone with the URL. LLM keys, `CHUNKER_TOKEN` and `DATABASE_URL` live as Cloudflare secrets.
+- Production has no app-level auth (OVERVIEW non-goal), so the whole domain must sit behind Cloudflare Access, the web app must verify the Access JWT on every request (Fly hostnames are public), and the chunk service must not be publicly reachable: LLM keys and saved chunks are otherwise open to anyone with the URL. Preview apps follow the same rules. LLM keys, `CHUNKER_TOKEN` and `DATABASE_URL` live as Fly secrets.
 - TanStack Start returns server-function errors as HTTP 200 with the error serialized in the body; a 200 in the network tab is not proof of success, so client error handlers log the cause.
 
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
-- Production deployment (roadmap 006–009): Neon serverless driver vs Hyperdrive for Drizzle in Workers (006); chunker image size, memory and cold start with the spaCy model on Containers, and where the response cache lives (R2, KV, or evals only) (007).
+- Production deployment (roadmap 006–009): how migrations run from the runtime image, which lacks drizzle-kit (006); chunker VM size, cold start with the spaCy model and auto-stop behaviour on Fly (007); whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
 - Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
 Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
 
 ## Revision History
 
-| Date       | Change                                                                                                                                                                        |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-23 | Initial architecture                                                                                                                                                          |
-| 2026-09-25 | Post-003 refresh: models and no-temperature constraint, disk cache in the chunker, full-mode design and tuned thresholds, `unrated` rule, relabel-on-read, resolved decisions |
-| 2026-09-26 | 004: saved-chunk server functions, confidence sync, `cloze` export with Anki file headers, `migrate` service, Postgres 15+, Start error-status note                           |
-| 2026-09-27 | 005 and bug 003: 120-item seed with accepted/also-valid answers, region metrics, thresholds kept, matcher version in the cache key, `meta.dropped`, open decisions resolved   |
-| 2026-09-27 | Planned production topology: Cloudflare Workers (web) and Containers (chunker), Neon Postgres, Cloudflare Access; replaces the Fly.io/Railway deploy note                     |
+| Date       | Change                                                                                                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-23 | Initial architecture                                                                                                                                                               |
+| 2026-09-25 | Post-003 refresh: models and no-temperature constraint, disk cache in the chunker, full-mode design and tuned thresholds, `unrated` rule, relabel-on-read, resolved decisions      |
+| 2026-09-26 | 004: saved-chunk server functions, confidence sync, `cloze` export with Anki file headers, `migrate` service, Postgres 15+, Start error-status note                                |
+| 2026-09-27 | 005 and bug 003: 120-item seed with accepted/also-valid answers, region metrics, thresholds kept, matcher version in the cache key, `meta.dropped`, open decisions resolved        |
+| 2026-09-27 | Planned production topology: Cloudflare Workers (web) and Containers (chunker), Neon Postgres, Cloudflare Access; replaces the Fly.io/Railway deploy note                          |
+| 2026-09-27 | Production topology revised: both services on Fly.io (private chunker, volume-backed cache, per-PR previews), Neon Postgres over node-postgres, Cloudflare for DNS and Access only |
