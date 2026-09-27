@@ -137,3 +137,19 @@ def test_cached_fast_payload_picks_up_the_current_seed(client, fake_llm, tmp_pat
     assert chunk["confidence"]["label"] == "high"
     assert chunk["confidence"]["signals"]["seed"] is True
     assert len(fake_llm.calls) == 1
+
+
+def test_dropped_chunks_are_reported_in_meta(client, fake_llm) -> None:
+    """Bug 003: validation dropped chunks silently; the response now says so."""
+    draft = make_draft()
+    stray = draft.chunks[0].model_copy(update={"surface": "echar de menos", "pattern": "echar de menos"})
+    draft = draft.model_copy(update={"chunks": [draft.chunks[0], stray]})
+    fake_llm.responses = [draft]
+    body = post(client).json()
+    assert len(body["chunks"]) == 1
+    assert any("echar de menos" in d for d in body["meta"]["dropped"])
+
+
+def test_meta_dropped_is_empty_when_nothing_was_dropped(client, fake_llm) -> None:
+    fake_llm.responses = [make_draft()]
+    assert post(client).json()["meta"]["dropped"] == []

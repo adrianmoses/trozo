@@ -351,6 +351,14 @@
         "cached": {
           "title": "Cached",
           "type": "boolean"
+        },
+        "dropped": {
+          "description": "Chunks removed by validation, with the reason (bug 003). Empty when none.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dropped",
+          "type": "array"
         }
       },
       "required": [

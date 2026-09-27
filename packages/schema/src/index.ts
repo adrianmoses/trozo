@@ -72,6 +72,10 @@ export type Model = string;
 export type LatencyMs = number;
 export type Cached = boolean;
 /**
+ * Chunks removed by validation, with the reason (bug 003). Empty when none.
+ */
+export type Dropped = string[];
+/**
  * This interface was referenced by `TrozoChunkAPI`'s JSON-Schema
  * via the `definition` "ConfidenceMode".
  */
@@ -197,6 +201,7 @@ export interface Meta {
   model: Model;
   latency_ms: LatencyMs;
   cached: Cached;
+  dropped?: Dropped;
 }
 /**
  * This interface was referenced by `TrozoChunkAPI`'s JSON-Schema

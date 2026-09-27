@@ -8,8 +8,13 @@ from pathlib import Path
 DEFAULT_CACHE_DIR = ".cache/chunker"
 
 
+# Bump when chunk validation or matching changes: cached responses were
+# validated by the matcher of their day (bug 003: valid chunks were dropped).
+MATCHER_VERSION = 2
+
+
 def cache_key(normalized_text: str, region: str, prompt_version: str, model: str) -> str:
-    payload = "|".join([normalized_text, region, prompt_version, model])
+    payload = "|".join([normalized_text, region, prompt_version, model, f"m{MATCHER_VERSION}"])
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 

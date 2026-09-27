@@ -225,12 +225,18 @@ def chunk(request: ChunkRequest) -> JSONResponse:
         fast_cached = True
     else:
         system = load_prompt(version)
-        draft, _errors = _generate_draft(llm, system, text, request.preferred_region)
+        draft, errors = _generate_draft(llm, system, text, request.preferred_region)
         response = _assemble(
             request_id=f"req_{uuid.uuid4().hex[:12]}",
             text=text,
             draft=draft,
-            meta=Meta(prompt_version=version, model=llm.model, latency_ms=0, cached=False),
+            meta=Meta(
+                prompt_version=version,
+                model=llm.model,
+                latency_ms=0,
+                cached=False,
+                dropped=[e for e in errors if e.endswith("dropped")],
+            ),
         )
         fast = response.model_dump(mode="json")
         cache.put(key, fast)
