@@ -51,7 +51,7 @@ def test_default_seed_path_points_at_the_repo_seed_file() -> None:
     repo_root = Path(__file__).resolve().parents[3]
     path = default_seed_path()
     assert path is not None
-    assert path.resolve() == repo_root / "evals" / "seed" / "seed_v0.yaml"
+    assert path.resolve() == repo_root / "evals" / "seed" / "seed_v1.yaml"
     assert path.is_file()
 
 
@@ -111,3 +111,46 @@ def test_seed_index_is_empty_without_env_or_repo_default(monkeypatch) -> None:
         assert len(seed_module.load_seed_index()) == 0
     finally:
         seed_module.load_seed_index.cache_clear()
+
+
+# --- 005: eval-only seed fields never widen fast-mode "verified" ---
+
+
+def test_build_index_ignores_accepted_also_valid_and_checked() -> None:
+    from app.pipeline.seed import build_index
+    from app.pipeline.spanish import lemma_key
+
+    index = build_index(
+        [
+            {
+                "id": "bus-01",
+                "checked": ["author", "reference:DLE"],
+                "expected_chunks": [
+                    {
+                        "surface": "camión",
+                        "regions": ["MX"],
+                        "accepted": ["pesero", {"surface": "autobús", "regions": ["ES"]}],
+                    }
+                ],
+                "also_valid": [{"surface": "llegar tarde", "regions": ["neutral"]}],
+            }
+        ]
+    )
+    assert index.regions_for(lemma_key("camión")) == {"MX"}
+    # accepted: and also_valid: forms are for eval scoring only (spec 005).
+    assert index.regions_for(lemma_key("autobús")) is None
+    assert index.regions_for(lemma_key("pesero")) is None
+    assert index.regions_for(lemma_key("llegar tarde")) is None
+
+
+def test_repo_seed_loads_into_the_index() -> None:
+    import yaml
+
+    from app.pipeline.seed import build_index, default_seed_path
+
+    path = default_seed_path()
+    assert path is not None and path.name == "seed_v1.yaml"
+    items = yaml.safe_load(path.read_text(encoding="utf-8"))
+    expected = {e["surface"] for i in items for e in i["expected_chunks"]}
+    assert len(build_index(items)) <= len(expected)
+    assert len(build_index(items)) > 0

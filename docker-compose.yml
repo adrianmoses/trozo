@@ -22,7 +22,7 @@ services:
       CHUNKER_TOKEN: ${CHUNKER_TOKEN:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CHUNKER_VERIFIER_MODEL: ${CHUNKER_VERIFIER_MODEL:-gpt-5.4-mini}
-      CHUNKER_SEED_PATH: /app/seed/seed_v0.yaml
+      CHUNKER_SEED_PATH: /app/seed/seed_v1.yaml
       CHUNKER_CACHE_DIR: /app/.cache/chunker
     volumes:
       - ./evals/seed:/app/seed:ro

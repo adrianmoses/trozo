@@ -1,0 +1,358 @@
+{
+  "stamp": "20260927T075126Z",
+  "prompt": "p2",
+  "split": "dev",
+  "mode": "fast",
+  "service_model": "claude-sonnet-5",
+  "verifier_model": null,
+  "thresholds": {
+    "t_high": 1.0,
+    "t_med": 0.6
+  },
+  "items": 60,
+  "chunk_recall": 0.9611,
+  "calque_rate": 0.0,
+  "region": {
+    "entries": 215,
+    "matched": 134,
+    "unmatched_excluded": 81,
+    "tags": 148,
+    "region_precision": 0.8783783783783784,
+    "neutral_targets": 86,
+    "over_tagged": 9,
+    "over_tag_rate": 0.10465116279069768
+  },
+  "check_mix": {
+    "advanced": {
+      "items": 15,
+      "native": 0,
+      "reference": 1,
+      "author": 15,
+      "unchecked": 0
+    },
+    "calque": {
+      "items": 9,
+      "native": 0,
+      "reference": 2,
+      "author": 9,
+      "unchecked": 0
+    },
+    "regional": {
+      "items": 18,
+      "native": 0,
+      "reference": 8,
+      "author": 18,
+      "unchecked": 0
+    },
+    "simple": {
+      "items": 18,
+      "native": 0,
+      "reference": 4,
+      "author": 18,
+      "unchecked": 0
+    }
+  },
+  "confidence": null,
+  "per_item": [
+    {
+      "id": "miss-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "popcorn-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "up-to-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "careful-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "right-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "shopping-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "walk-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "car-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cool-01",
+      "recall": 0.6666666666666666,
+      "failing": true
+    },
+    {
+      "id": "juice-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hangout-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hope-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "just-ate-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "realize-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "straw-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "avocado-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "beans-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "jacket-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "apartment-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "money-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "take-bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "angry-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "annoying-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "big-deal-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "beer-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bathroom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sidewalk-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "weekend-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "library-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "attend-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "call-back-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "miss-bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "on-purpose-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-party-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "wish-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "doubt-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bored-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "party-location-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "look-forward-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "get-along-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "run-out-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "look-for-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "dream-about-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "rain-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cake-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "no-idea-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "thirsty-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sleepy-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "lucky-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sunny-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "time-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "ago-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "help-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "like-coffee-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "see-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sorry-late-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "good-luck-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "agree-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "name-01",
+      "recall": 1.0,
+      "failing": false
+    }
+  ]
+}

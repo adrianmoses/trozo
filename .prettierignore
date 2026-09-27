@@ -7,3 +7,7 @@ packages/schema/chunk.schema.json
 
 # generated (drizzle-kit)
 apps/web/drizzle/meta/
+
+# eval run output copied verbatim as evidence (evals/results is gitignored)
+evals/reports/**/*.summary.json
+evals/reports/**/*-*.md

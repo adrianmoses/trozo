@@ -43,7 +43,7 @@ from app.pipeline.spanish import keys_overlap, lemma_key  # noqa: E402
 from app.prompts import current_version, load_prompt  # noqa: E402
 
 ROOT = Path(__file__).parents[3]
-SEED = ROOT / "evals" / "seed" / "seed_v0.yaml"
+SEED = ROOT / "evals" / "seed" / "seed_v1.yaml"
 POISON = ROOT / "evals" / "seed" / "poison_v0.yaml"
 RESULTS = ROOT / "evals" / "results"
 CANDIDATES = ["gpt-5.5", "gpt-5.4-mini"]

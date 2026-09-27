@@ -1,0 +1,427 @@
+{
+  "stamp": "20260927T080237Z",
+  "prompt": "p1",
+  "split": "dev",
+  "mode": "full",
+  "service_model": "claude-sonnet-5",
+  "verifier_model": "gpt-5.4-mini",
+  "thresholds": {
+    "t_high": 1.0,
+    "t_med": 0.6
+  },
+  "items": 60,
+  "chunk_recall": 0.9167,
+  "calque_rate": 0.0,
+  "region": {
+    "entries": 210,
+    "matched": 126,
+    "unmatched_excluded": 84,
+    "tags": 143,
+    "region_precision": 0.8601398601398601,
+    "neutral_targets": 75,
+    "over_tagged": 7,
+    "over_tag_rate": 0.09333333333333334
+  },
+  "check_mix": {
+    "advanced": {
+      "items": 15,
+      "native": 0,
+      "reference": 1,
+      "author": 15,
+      "unchecked": 0
+    },
+    "calque": {
+      "items": 9,
+      "native": 0,
+      "reference": 2,
+      "author": 9,
+      "unchecked": 0
+    },
+    "regional": {
+      "items": 18,
+      "native": 0,
+      "reference": 8,
+      "author": 18,
+      "unchecked": 0
+    },
+    "simple": {
+      "items": 18,
+      "native": 0,
+      "reference": 4,
+      "author": 18,
+      "unchecked": 0
+    }
+  },
+  "confidence": {
+    "chunk": {
+      "n": 86,
+      "base_rate": 0.7209302325581395,
+      "high_precision_masked": 0.8363636363636363,
+      "high_coverage_masked": 0.6395348837209303,
+      "buckets_masked": {
+        "high": {
+          "n": 55,
+          "accuracy": 0.8363636363636363
+        },
+        "med": {
+          "n": 28,
+          "accuracy": 0.5357142857142857
+        },
+        "low": {
+          "n": 3,
+          "accuracy": 0.3333333333333333
+        }
+      },
+      "consistency_hist": {
+        "0.0": 1,
+        "0.2": 1,
+        "0.4": 1,
+        "0.6": 4,
+        "0.8": 6,
+        "1.0": 73
+      },
+      "verifier_agree_rate": 0.7093023255813954,
+      "served_labels": {
+        "high": 71,
+        "med": 12,
+        "low": 3
+      }
+    },
+    "alt": {
+      "n": 124,
+      "base_rate": 0.5161290322580645,
+      "high_precision_masked": 0.7547169811320755,
+      "high_coverage_masked": 0.4274193548387097,
+      "buckets_masked": {
+        "high": {
+          "n": 53,
+          "accuracy": 0.7547169811320755
+        },
+        "med": {
+          "n": 65,
+          "accuracy": 0.36923076923076925
+        },
+        "low": {
+          "n": 6,
+          "accuracy": 0.0
+        }
+      },
+      "consistency_hist": {
+        "0.0": 8,
+        "0.2": 10,
+        "0.4": 9,
+        "0.6": 13,
+        "0.8": 20,
+        "1.0": 64
+      },
+      "verifier_agree_rate": 0.7983870967741935,
+      "served_labels": {
+        "high": 66,
+        "med": 52,
+        "low": 6
+      }
+    }
+  },
+  "per_item": [
+    {
+      "id": "miss-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "popcorn-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "up-to-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "careful-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "right-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "shopping-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "walk-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "car-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cool-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "juice-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hangout-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "hope-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "just-ate-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "realize-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "straw-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "avocado-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "beans-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "jacket-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "apartment-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "money-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "take-bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "angry-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "annoying-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "big-deal-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "beer-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bathroom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sidewalk-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "weekend-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "library-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "attend-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "call-back-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "miss-bus-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "on-purpose-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "excited-party-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "wish-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "doubt-subj-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "bored-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "party-location-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "look-forward-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "get-along-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "run-out-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "look-for-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "dream-about-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "rain-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "cake-idiom-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "no-idea-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "thirsty-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sleepy-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "lucky-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "sunny-01",
+      "recall": 0.0,
+      "failing": true
+    },
+    {
+      "id": "time-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "ago-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "help-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "like-coffee-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "see-you-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "sorry-late-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "good-luck-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "agree-01",
+      "recall": 1.0,
+      "failing": false
+    },
+    {
+      "id": "name-01",
+      "recall": 1.0,
+      "failing": false
+    }
+  ]
+}
