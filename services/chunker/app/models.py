@@ -174,6 +174,10 @@ class Meta(StrictModel):
     model: str
     latency_ms: int
     cached: bool
+    dropped: list[str] = Field(
+        default_factory=list,
+        description="Chunks removed by validation, with the reason (bug 003). Empty when none.",
+    )
 
 
 class ChunkResponse(StrictModel):

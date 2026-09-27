@@ -76,3 +76,48 @@ def test_keys_overlap_optional_words() -> None:
 
     assert keys_overlap(lemma_key("tener muchas ganas de"), lemma_key("tener ganas de"))
     assert not keys_overlap(lemma_key("tener ganas de"), lemma_key("echar de menos"))
+
+
+# --- bug 003: valid chunks rejected by the matcher (written before the fix) ---
+
+
+def test_nouns_that_look_like_clitic_verbs_are_not_mangled() -> None:
+    # The clitic regex turned 'suerte' into 'suer' and 'parte' into 'par'.
+    assert contains_chunk("Buena suerte con tu examen.", "buena suerte")
+    assert contains_chunk("¡Tienes mucha suerte!", "tener suerte")
+    assert contains_chunk("Por mi parte, está bien.", "por mi parte")
+
+
+def test_short_verbs_with_an_attached_clitic_match() -> None:
+    # 'darme' lemmatizes to 'dar yo'; 'dar' is too short for the stem fallback.
+    assert contains_chunk("Voy a darme una ducha.", "darse una ducha")
+    assert contains_chunk("Ya me di cuenta.", "darse cuenta de") is False  # 'de' is required
+    assert contains_chunk("Me di cuenta de todo.", "darse cuenta de")
+    assert contains_chunk("Nos vemos mañana.", "verse")
+
+
+def test_nouns_lemmatized_differently_alone_match_their_surface() -> None:
+    # Alone, 'pajita' is tagged ADJ with lemma 'pajito'; in a sentence it is 'pajita'.
+    assert contains_chunk("¿Me da una pajita?", "pajita")
+    assert contains_chunk("Me encantan los frijoles.", "frijoles")
+    assert contains_chunk("Los pibes juegan afuera.", "pibes")
+
+
+def test_every_form_is_found_in_a_sentence_that_contains_it() -> None:
+    forms = [
+        "buena suerte", "tener suerte", "por mi parte", "darse cuenta de", "darse por vencido",
+        "darse una ducha", "irse de rumba", "qué embole", "verse", "caña", "chavales",
+        "crispetas", "date prisa", "frijoles", "guita", "lana", "pajita", "pibes",
+        "no te rindas", "ser sensata", "jugar afuera", "en lo que a mí respecta",
+        "postularse a un trabajo", "pasarlo bien", "quedarse sin", "tomarse una cerveza",
+    ]
+    missed = [f for f in forms if not contains_chunk(f"Dijo que {f} ayer.", f)]
+    assert missed == []
+
+
+def test_clitic_verbs_still_share_a_key_with_their_base() -> None:
+    from app.pipeline.spanish import lemma_key
+
+    assert lemma_key("postularse") == lemma_key("postular")
+    assert lemma_key("pasarlo bien") == lemma_key("pasar bien")
+    assert lemma_key("suerte") != lemma_key("suer")

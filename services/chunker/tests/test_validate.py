@@ -92,3 +92,14 @@ def test_calque_avoid_identical_to_chunk_dropped() -> None:
     assert len(repaired.notes) == 1
     assert repaired.notes[0].avoid == "el weekend"
     assert any("identical to a returned chunk" in e for e in errors)
+
+
+def test_valid_chunk_with_a_noun_ending_in_te_is_kept() -> None:
+    """Bug 003: 'buena suerte' was dropped as 'not found in translation'."""
+    draft = LLMDraft(
+        translation="Buena suerte con tu examen.",
+        chunks=[chunk_with("buena suerte", "¡Buena suerte mañana!")],
+    )
+    repaired, errors = validate_repair(draft)
+    assert [c.surface for c in repaired.chunks] == ["buena suerte"]
+    assert errors == []
