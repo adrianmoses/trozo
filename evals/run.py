@@ -1,7 +1,8 @@
 """trozo eval runner.
 
 Calls the running chunk service over HTTP for each seed item and reports
-chunk recall and calque rate; in full-confidence mode also high-label
+chunk recall, calque rate, region precision and over-tagging (005); in
+full-confidence mode also high-label
 precision (seed masked), calibration by bucket, the consistency histogram and
 verifier agreement. Writes raw results as JSONL, a summary JSON, and a
 Markdown report with deltas against the previous comparable run.
@@ -23,8 +24,9 @@ import httpx2
 import yaml
 
 from confidence_metrics import DEFAULT_T_HIGH, DEFAULT_T_MED, summarise, targets
+from region_metrics import check_mix, region_rows, summarise_regions
 
-SEED_PATH = Path(__file__).parent / "seed" / "seed_v0.yaml"
+SEED_PATH = Path(__file__).parent / "seed" / "seed_v1.yaml"
 RESULTS_DIR = Path(__file__).parent / "results"
 
 _PARENS = re.compile(r"\([^)]*\)")
@@ -72,6 +74,32 @@ def surface_matches(surface: str, expected: str) -> bool:
     return contains_tokens(a, b) or contains_tokens(b, a)
 
 
+def expected_forms(expected: dict) -> list[tuple[str, list[str]]]:
+    """(surface, regions) for an expected chunk's primary surface and each
+    `accepted:` alternative (005). An accepted entry is a string (same regions
+    as the primary) or `{surface, regions}` when its regions differ, e.g.
+    _autobús_ accepted for _camión_ [MX]."""
+    regions = expected.get("regions") or ["neutral"]
+    forms = [(expected["surface"], regions)]
+    for alt in expected.get("accepted") or []:
+        if isinstance(alt, str):
+            forms.append((alt, regions))
+        else:
+            forms.append((alt["surface"], alt.get("regions") or regions))
+    return forms
+
+
+def match_regions(surface: str, expected: dict) -> list[str] | None:
+    """Regions of the first expected form `surface` matches, or None."""
+    return next((r for form, r in expected_forms(expected) if surface_matches(surface, form)), None)
+
+
+def expected_match(surface: str, expected: dict) -> bool:
+    """True if `surface` matches an expected chunk's primary surface or any
+    of its `accepted:` alternatives."""
+    return match_regions(surface, expected) is not None
+
+
 def surfaces_in_response(response: dict) -> list[str]:
     out = []
     for chunk in response.get("chunks", []):
@@ -94,16 +122,14 @@ def texts_in_response(response: dict) -> list[str]:
 
 
 def score_item(item: dict, response: dict) -> dict:
-    surfaces = [norm_tokens(s) for s in surfaces_in_response(response)]
+    surfaces = surfaces_in_response(response)
     expected = item.get("expected_chunks", [])
     found = []
+    # Recall is over `expected_chunks` only; `also_valid:` chunks count for
+    # precision and region scoring (see confidence_metrics.expectations).
     for exp in expected:
-        needle = norm_tokens(exp["surface"])
-        hit = any(
-            contains_tokens(surface, needle) or contains_tokens(needle, surface)
-            for surface in surfaces
-        )
-        found.append({"surface": exp["surface"], "found": hit})
+        hit = next((s for s in surfaces if expected_match(s, exp)), None)
+        found.append({"surface": exp["surface"], "found": hit is not None, "via": hit})
     texts = [norm_tokens(t) for t in texts_in_response(response)]
     violations = [
         phrase
@@ -158,6 +184,20 @@ def write_report(path: Path, summary: dict, previous: tuple[Path, dict] | None) 
     pconf = (prev or {}).get("confidence") or {}
     for label, key in headline:
         lines.append(f"| {label} | {_fmt(summary[key])} | {_delta(summary[key], (prev or {}).get(key))} |")
+    reg, preg = summary.get("region") or {}, (prev or {}).get("region") or {}
+    for label, key in (
+        ("region precision", "region_precision"),
+        ("over-tagging rate", "over_tag_rate"),
+    ):
+        lines.append(f"| {label} | {_fmt(reg.get(key))} | {_delta(reg.get(key), preg.get(key))} |")
+    if reg:
+        lines += [
+            "",
+            f"Region scoring: {reg['matched']} of {reg['entries']} chunks and alternatives matched an "
+            f"expected chunk ({reg['unmatched_excluded']} unmatched, excluded); {reg['tags']} tags scored; "
+            f"{reg['over_tagged']} of {reg['neutral_targets']} matches on neutral-only expectations carried a "
+            "country tag.",
+        ]
     for kind in ("chunk", "alt"):
         c, pc = conf.get(kind) or {}, pconf.get(kind) or {}
         if not c.get("n"):
@@ -179,12 +219,99 @@ def write_report(path: Path, summary: dict, previous: tuple[Path, dict] | None) 
         for label, b in c["buckets_masked"].items():
             lines.append(f"| {label} | {b['n']} | {_fmt(b['accuracy'])} |")
         lines += ["", f"Consistency histogram: {c['consistency_hist']}"]
+    mix = summary.get("check_mix") or {}
+    if mix:
+        lines += ["", "### How the answers were checked", "",
+                  "Items per tier with each kind of check (an item can have several).", "",
+                  "| Tier | Items | Native | Reference | Author | Unchecked |",
+                  "| --- | --- | --- | --- | --- | --- |"]
+        for tier, c in mix.items():
+            lines.append(f"| {tier} | {c['items']} | {c['native']} | {c['reference']} | {c['author']} | {c['unchecked']} |")
     failing_now = {i["id"] for i in summary["per_item"] if i["failing"]}
     failing_before = {i["id"] for i in (prev or {}).get("per_item", []) if i["failing"]}
     newly = sorted(failing_now - failing_before) if prev else sorted(failing_now)
     lines += ["", "### Newly failing items" if prev else "### Failing items", ""]
     lines += [f"- `{i}`" for i in newly] or ["None."]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_row(item: dict, record: dict) -> dict:
+    """Per-item row from a JSONL record (a live response or a stored one)."""
+    if "response" not in record:
+        return {"id": item["id"], "tier": item["tier"], "recall": None,
+                "violations": ["<request failed>"], "cached": False, "targets": [], "regions": []}
+    body = record["response"]
+    scores = score_item(item, body)
+    return {
+        "id": item["id"],
+        "tier": item["tier"],
+        "recall": scores["recall"],
+        "violations": scores["calque_violations"],
+        "cached": body["meta"]["cached"],
+        "targets": targets(item, body, expected_match),
+        "regions": region_rows(item, body, match_regions),
+    }
+
+
+def summarise_run(rows: list[dict], items: list[dict], *, stamp: str, prompt: str, split: str,
+                  mode: str, service_model: str | None, verifier_model: str | None,
+                  t_high: float, t_med: float) -> dict:
+    scored = [r["recall"] for r in rows if r["recall"] is not None]
+    confidence = None
+    if mode == "full":
+        all_targets = [t for r in rows for t in r["targets"]]
+        confidence = {
+            kind: summarise([t for t in all_targets if t["kind"] == kind], t_high, t_med)
+            for kind in ("chunk", "alt")
+        }
+    region = summarise_regions([g for r in rows for g in r["regions"]])
+    return {
+        "stamp": stamp,
+        "prompt": prompt,
+        "split": split,
+        "mode": mode,
+        "service_model": service_model,
+        "verifier_model": verifier_model,
+        "thresholds": {"t_high": t_high, "t_med": t_med},
+        "items": len(rows),
+        "chunk_recall": round(sum(scored) / len(scored), 4) if scored else 0.0,
+        "calque_rate": round(sum(1 for r in rows if r["violations"]) / len(rows), 4) if rows else 0.0,
+        "region": region,
+        "check_mix": check_mix(items),
+        "confidence": confidence,
+        "per_item": [
+            {"id": r["id"], "recall": r["recall"], "failing": bool(r["violations"]) or (r["recall"] or 0) < 1.0}
+            for r in rows
+        ],
+    }
+
+
+def print_run(rows: list[dict], summary: dict) -> None:
+    print(f"\n{'id':<16} {'tier':<10} {'recall':>7} {'calque':>7} {'cached':>7}")
+    for row in rows:
+        recall = "-" if row["recall"] is None else f"{row['recall']:.2f}"
+        print(f"{row['id']:<16} {row['tier']:<10} {recall:>7} "
+              f"{'FAIL' if row['violations'] else 'ok':>7} {str(row['cached']):>7}")
+    reg = summary["region"]
+    print(f"\nitems: {summary['items']}  chunk recall: {summary['chunk_recall']:.2f}  "
+          f"calque rate: {summary['calque_rate']:.2f}")
+    print(f"region precision: {_fmt(reg['region_precision'])} ({reg['tags']} tags)  "
+          f"over-tagging: {_fmt(reg['over_tag_rate'])} ({reg['over_tagged']}/{reg['neutral_targets']})  "
+          f"unmatched excluded: {reg['unmatched_excluded']}/{reg['entries']}")
+    for kind, label in (("chunk", "chunks"), ("alt", "alternatives")):
+        c = (summary["confidence"] or {}).get(kind) or {}
+        if not c.get("n"):
+            continue
+        print(
+            f"{label}: n={c['n']}  high precision (seed masked): {_fmt(c['high_precision_masked'])}"
+            f"  coverage: {_fmt(c['high_coverage_masked'])}  base rate: {_fmt(c['base_rate'])}"
+            f"  verifier agree: {_fmt(c['verifier_agree_rate'])}"
+        )
+        print(
+            "  calibration: "
+            + "  ".join(f"{k} {b['n']}@{_fmt(b['accuracy'])}" for k, b in c["buckets_masked"].items())
+        )
+        print(f"  consistency: {c['consistency_hist']}")
 
 
 def main() -> int:
@@ -247,78 +374,28 @@ def main() -> int:
             )
             if resp.status_code != 200:
                 record = {"id": item["id"], "error": resp.json(), "status": resp.status_code}
-                rows.append({"id": item["id"], "tier": item["tier"], "recall": None,
-                             "violations": ["<request failed>"], "cached": False})
             else:
                 body = resp.json()
                 service_model = service_model or body["meta"]["model"]
-                scores = score_item(item, body)
                 record = {"id": item["id"], "tier": item["tier"], "split": item.get("split"),
-                          "scores": scores, "response": body}
-                rows.append({
-                    "id": item["id"],
-                    "tier": item["tier"],
-                    "recall": scores["recall"],
-                    "violations": scores["calque_violations"],
-                    "cached": body["meta"]["cached"],
-                    "targets": targets(item, body, surface_matches),
-                })
+                          "scores": score_item(item, body), "response": body}
+            rows.append(build_row(item, record))
             out.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-    print(f"\n{'id':<16} {'tier':<10} {'recall':>7} {'calque':>7} {'cached':>7}")
-    for row in rows:
-        recall = "-" if row["recall"] is None else f"{row['recall']:.2f}"
-        print(f"{row['id']:<16} {row['tier']:<10} {recall:>7} "
-              f"{'FAIL' if row['violations'] else 'ok':>7} {str(row['cached']):>7}")
-
-    scored = [r["recall"] for r in rows if r["recall"] is not None]
-    chunk_recall = sum(scored) / len(scored) if scored else 0.0
-    calque_rate = sum(1 for r in rows if r["violations"]) / len(rows)
-    print(f"\nitems: {len(rows)}  chunk recall: {chunk_recall:.2f}  "
-          f"calque rate: {calque_rate:.2f}")
-
     thresholds = meta.get("full_confidence") or {}
-    t_high = thresholds.get("t_high", DEFAULT_T_HIGH)
-    t_med = thresholds.get("t_med", DEFAULT_T_MED)
-    confidence = None
-    if args.confidence == "full":
-        all_targets = [t for r in rows for t in r.get("targets", [])]
-        confidence = {
-            kind: summarise([t for t in all_targets if t["kind"] == kind], t_high, t_med)
-            for kind in ("chunk", "alt")
-        }
-        for kind, label in (("chunk", "chunks"), ("alt", "alternatives")):
-            c = confidence[kind]
-            if not c.get("n"):
-                continue
-            print(
-                f"{label}: n={c['n']}  high precision (seed masked): {_fmt(c['high_precision_masked'])}"
-                f"  coverage: {_fmt(c['high_coverage_masked'])}  base rate: {_fmt(c['base_rate'])}"
-                f"  verifier agree: {_fmt(c['verifier_agree_rate'])}"
-            )
-            print(
-                "  calibration: "
-                + "  ".join(f"{k} {b['n']}@{_fmt(b['accuracy'])}" for k, b in c["buckets_masked"].items())
-            )
-            print(f"  consistency: {c['consistency_hist']}")
-
-    summary = {
-        "stamp": stamp,
-        "prompt": args.prompt,
-        "split": args.split,
-        "mode": args.confidence,
-        "service_model": service_model,
-        "verifier_model": meta.get("verifier_model") if args.confidence == "full" else None,
-        "thresholds": {"t_high": t_high, "t_med": t_med},
-        "items": len(rows),
-        "chunk_recall": round(chunk_recall, 4),
-        "calque_rate": round(calque_rate, 4),
-        "confidence": confidence,
-        "per_item": [
-            {"id": r["id"], "recall": r["recall"], "failing": bool(r["violations"]) or (r["recall"] or 0) < 1.0}
-            for r in rows
-        ],
-    }
+    summary = summarise_run(
+        rows,
+        items,
+        stamp=stamp,
+        prompt=args.prompt,
+        split=args.split,
+        mode=args.confidence,
+        service_model=service_model,
+        verifier_model=meta.get("verifier_model") if args.confidence == "full" else None,
+        t_high=thresholds.get("t_high", DEFAULT_T_HIGH),
+        t_med=thresholds.get("t_med", DEFAULT_T_MED),
+    )
+    print_run(rows, summary)
     summary_path = out_path.with_suffix(".summary.json")
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
     report_path = out_path.with_suffix(".md")

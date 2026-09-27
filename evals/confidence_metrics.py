@@ -8,8 +8,9 @@ Seed masking: every expected chunk is in the seed, so rule 1 ("seed match ->
 high") would make precision trivially perfect. Metrics recompute labels from
 consistency + verifier only.
 
-Correctness is pessimistic: a chunk counts as correct only when it matches
-an expected chunk for its seed item (the runner's recall matcher).
+Correctness: a chunk counts as correct when it matches an expected chunk for
+its seed item, by its primary surface or any `accepted:` alternative (the
+runner's `expected_match`). Before 005 only the primary surface counted.
 """
 
 from __future__ import annotations
@@ -34,10 +35,18 @@ def label_from_signals(
     return "low"
 
 
+def expectations(item: dict) -> list[dict]:
+    """Expected chunks plus `also_valid:` ones (005): other valid chunks for
+    the phrase. Those count as correct and are scored for region, but are not
+    required for recall. They live outside `expected_chunks` so the chunk
+    service's seed index (fast-mode "verified") never sees them."""
+    return [*item.get("expected_chunks", []), *(dict(e, optional=True) for e in item.get("also_valid") or [])]
+
+
 def targets(item: dict, response: dict, matcher) -> list[dict]:
     """One row per chunk and per alternative with signals and correctness.
-    `matcher(surface, expected_surface) -> bool` is the runner's recall test."""
-    expected = [e["surface"] for e in item.get("expected_chunks", [])]
+    `matcher(surface, expected_entry) -> bool` is the runner's recall test."""
+    expected = expectations(item)
     rows = []
     for chunk in response.get("chunks", []):
         entries = [("chunk", chunk)] + [("alt", a) for a in chunk.get("alternatives", [])]

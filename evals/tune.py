@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from confidence_metrics import sweep, targets
-from run import SEED_PATH, surface_matches
+from run import SEED_PATH, expected_match
 
 import yaml
 
@@ -27,7 +27,7 @@ def main() -> int:
     for line in args.jsonl.read_text(encoding="utf-8").splitlines():
         rec = json.loads(line)
         if "response" in rec:
-            rows.extend(targets(items[rec["id"]], rec["response"], surface_matches))
+            rows.extend(targets(items[rec["id"]], rec["response"], expected_match))
     if not any(r["consistency"] is not None or r["verifier"] is not None for r in rows):
         print("no full-mode signals in this file (run with --confidence full)", file=sys.stderr)
         return 1
