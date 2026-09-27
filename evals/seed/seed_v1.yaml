@@ -1,7 +1,11 @@
-# trozo seed set v0.
-# Format per docs/Chunks Translator — Spec.md. `split`: dev (prompt tuning,
-# few-shot source) | test (report only). Few-shot items in prompts/p1.md are
-# dev by definition.
+# trozo seed set v1 (005; v0 was the 30-item set from 001).
+# Format per docs/Chunks Translator — Spec.md, extended in 005: `accepted:`
+# (other valid forms of an expected chunk; a string keeps its regions,
+# `{surface, regions}` sets its own), `also_valid:` (other valid chunks for
+# the phrase: count as correct, not required for recall, not seed matches)
+# and `checked:` (native:<region> | reference:<source> | author).
+# `split`: dev (prompt tuning, few-shot source) | test (report only). Few-shot
+# items in prompts/p1.md are dev by definition.
 
 - id: miss-you-01
   tier: simple
@@ -16,6 +20,7 @@
     - 'te pierdo'
   expected_note_kinds: []
   source: 'own note / DLE: echar de menos, extrañar'
+  checked: [author, reference:DLE]
 
 - id: hungry-01
   tier: simple
@@ -24,10 +29,12 @@
   expected_chunks:
     - surface: tener hambre
       regions: [neutral]
+      accepted: [estar muerto de hambre]
   forbidden:
     - 'estoy hambriento'
   expected_note_kinds: []
   source: 'own note / any textbook: tener hambre'
+  checked: [author]
 
 - id: popcorn-01
   tier: regional
@@ -40,10 +47,14 @@
       regions: [AR]
     - surface: crispetas
       regions: [CO]
+  also_valid:
+    - surface: vamos a
+      regions: [neutral]
   forbidden:
     - 'maíz explotado'
   expected_note_kinds: []
   source: 'own note / DLE regional entries'
+  checked: [author, reference:DLE]
 
 - id: bus-01
   tier: regional
@@ -52,13 +63,19 @@
   expected_chunks:
     - surface: llegar tarde
       regions: [neutral]
+      accepted: [{ surface: ir con retraso, regions: [ES] }]
     - surface: colectivo
       regions: [AR]
     - surface: camión
       regions: [MX]
+  also_valid:
+    - surface: autobús
+      regions: [neutral, ES]
+      accepted: [{ surface: bus, regions: [CO] }]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: colectivo (AR), camión (MX coloq.)'
+  checked: [author, reference:DLE]
 
 - id: up-to-you-01
   tier: advanced
@@ -67,10 +84,12 @@
   expected_chunks:
     - surface: depender de
       regions: [neutral]
+      accepted: [tú decides, como tú quieras]
   forbidden:
     - 'depende en'
   expected_note_kinds: [preposition]
   source: 'own note / DLE: depender de'
+  checked: [author, reference:DLE]
 
 - id: about-to-01
   tier: advanced
@@ -82,6 +101,7 @@
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: a punto de'
+  checked: [author, reference:DLE]
 
 - id: excited-01
   tier: calque
@@ -90,10 +110,12 @@
   expected_chunks:
     - surface: estar emocionado
       regions: [neutral]
+      accepted: [estar entusiasmado, tener muchas ganas]
   forbidden:
     - 'excitado'
   expected_note_kinds: [false_friend]
   source: 'own note / DLE: excitado (sentido sexual). Bare input has no complement, so tener ganas de is not expected here (spike finding).'
+  checked: [author, reference:DLE]
 
 - id: apply-job-01
   tier: calque
@@ -102,10 +124,26 @@
   expected_chunks:
     - surface: solicitar un empleo
       regions: [neutral]
+      accepted:
+        [
+          solicitar un trabajo,
+          presentar una solicitud de empleo,
+          { surface: postularse a un trabajo, regions: [MX, AR, CO] },
+        ]
+  also_valid:
+    - surface: trabajo
+      regions: [neutral]
+      accepted:
+        [
+          { surface: chamba, regions: [MX] },
+          { surface: curro, regions: [ES] },
+          { surface: laburo, regions: [AR] },
+        ]
   forbidden:
     - 'aplicar a un trabajo'
   expected_note_kinds: [false_friend]
   source: 'own note / DLE: solicitar; aplicar calque from EN (model tags it false_friend — spike finding)'
+  checked: [author, reference:DLE]
 
 - id: careful-01
   tier: simple
@@ -114,10 +152,12 @@
   expected_chunks:
     - surface: tener cuidado
       regions: [neutral]
+      accepted: [cuídate, andar con cuidado]
   forbidden:
     - 'ser cuidadoso'
   expected_note_kinds: []
   source: 'own note / any textbook: tener cuidado'
+  checked: [author]
 
 - id: right-01
   tier: simple
@@ -126,10 +166,12 @@
   expected_chunks:
     - surface: tener razón
       regions: [neutral]
+      accepted: [estar en lo cierto]
   forbidden:
     - 'estás correcto'
   expected_note_kinds: []
   source: 'own note / DLE: tener razón'
+  checked: [author, reference:DLE]
 
 - id: shopping-01
   tier: simple
@@ -138,9 +180,11 @@
   expected_chunks:
     - surface: ir de compras
       regions: [neutral]
+      accepted: [ir a comprar]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: ir de compras'
+  checked: [author, reference:DLE]
 
 - id: attention-01
   tier: simple
@@ -149,10 +193,16 @@
   expected_chunks:
     - surface: prestar atención
       regions: [neutral]
+      accepted: [{ surface: poner atención, regions: [MX] }, hacer caso]
+  also_valid:
+    - surface: profesor
+      regions: [neutral]
+      accepted: [maestro, profe]
   forbidden:
     - 'pagar atención'
   expected_note_kinds: [calque]
   source: 'own note / DLE: prestar atención; pagar calque from EN'
+  checked: [author, reference:DLE]
 
 - id: question-01
   tier: simple
@@ -161,10 +211,12 @@
   expected_chunks:
     - surface: hacer una pregunta
       regions: [neutral]
+      accepted: [preguntar algo]
   forbidden:
     - 'preguntar una pregunta'
   expected_note_kinds: []
   source: 'own note / DLE: hacer una pregunta'
+  checked: [author, reference:DLE]
 
 - id: hot-01
   tier: simple
@@ -173,10 +225,12 @@
   expected_chunks:
     - surface: hacer calor
       regions: [neutral]
+      accepted: [estar muy caluroso]
   forbidden:
     - 'está caliente hoy'
   expected_note_kinds: []
   source: 'own note / any textbook: hacer calor (weather)'
+  checked: [author]
 
 - id: walk-01
   tier: simple
@@ -185,10 +239,20 @@
   expected_chunks:
     - surface: dar un paseo
       regions: [neutral]
+      accepted:
+        [
+          dar una vuelta,
+          ir a pasear,
+          { surface: salir a caminar, regions: [MX, AR, CO] },
+        ]
+  also_valid:
+    - surface: vamos a
+      regions: [neutral]
   forbidden:
     - 'tomar un paseo'
   expected_note_kinds: []
   source: 'own note / DLE: dar un paseo'
+  checked: [author, reference:DLE]
 
 - id: car-01
   tier: regional
@@ -204,6 +268,7 @@
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: coche, carro, auto regional use'
+  checked: [author, reference:DLE]
 
 - id: drive-01
   tier: regional
@@ -217,6 +282,7 @@
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: conducir (ES), manejar (Am.)'
+  checked: [author, reference:DLE]
 
 - id: cool-01
   tier: regional
@@ -225,13 +291,20 @@
   expected_chunks:
     - surface: qué chido
       regions: [MX]
+      accepted: [qué padre]
     - surface: qué guay
       regions: [ES]
     - surface: qué chévere
       regions: [CO]
+  also_valid:
+    - surface: qué genial
+      regions: [neutral]
+    - surface: qué copado
+      regions: [AR]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: chido, guay, chévere'
+  checked: [author, reference:DLE]
 
 - id: job-01
   tier: regional
@@ -244,9 +317,16 @@
       regions: [MX]
     - surface: curro
       regions: [ES]
+  also_valid:
+    - surface: me gusta
+      regions: [neutral]
+      accepted: [me encanta]
+    - surface: laburo
+      regions: [AR]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: chamba (Mx coloq.), curro (Esp coloq.)'
+  checked: [author, reference:DLE]
 
 - id: juice-01
   tier: regional
@@ -257,9 +337,14 @@
       regions: [ES]
     - surface: jugo
       regions: [neutral]
+  also_valid:
+    - surface: quisiera
+      regions: [neutral]
+      accepted: [me gustaría, quiero]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: zumo (Esp), jugo (Am.)'
+  checked: [author, reference:DLE]
 
 - id: computer-01
   tier: regional
@@ -270,9 +355,19 @@
       regions: [ES]
     - surface: computadora
       regions: [neutral]
+      accepted: [{ surface: computador, regions: [CO] }]
+  also_valid:
+    - surface: se me rompió
+      regions: [neutral]
+      accepted:
+        [
+          { surface: se me descompuso, regions: [MX] },
+          { surface: se me averió, regions: [ES] },
+        ]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: ordenador (Esp), computadora (Am.)'
+  checked: [author, reference:DLE]
 
 - id: hangout-01
   tier: regional
@@ -281,9 +376,14 @@
   expected_chunks:
     - surface: quedar
       regions: [ES]
+  also_valid:
+    - surface: salir
+      regions: [neutral]
+      accepted: [verse]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: quedar (citarse, Esp)'
+  checked: [author, reference:DLE]
 
 - id: hope-subj-01
   tier: advanced
@@ -292,10 +392,12 @@
   expected_chunks:
     - surface: esperar que
       regions: [neutral]
+      accepted: [ojalá que]
   forbidden:
     - 'espero que puedes'
   expected_note_kinds: [subjunctive_trigger]
   source: 'own note / any grammar: esperar que + subjuntivo'
+  checked: [author]
 
 - id: concerned-01
   tier: advanced
@@ -304,9 +406,17 @@
   expected_chunks:
     - surface: en lo que a mí respecta
       regions: [neutral]
+  also_valid:
+    - surface: por mí
+      regions: [neutral]
+      accepted: [por mi parte]
+    - surface: está bien
+      regions: [neutral]
+      accepted: [me parece bien]
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: en lo que respecta a'
+  checked: [author, reference:DLE]
 
 - id: soup-cold-01
   tier: advanced
@@ -315,10 +425,12 @@
   expected_chunks:
     - surface: estar frío
       regions: [neutral]
+      accepted: [quedarse frío]
   forbidden:
     - 'la sopa es fría'
   expected_note_kinds: [ser_estar]
   source: 'own note / any grammar: estar for states'
+  checked: [author]
 
 - id: just-ate-01
   tier: advanced
@@ -331,6 +443,7 @@
     - 'justo comí'
   expected_note_kinds: []
   source: 'own note / any grammar: acabar de + inf.'
+  checked: [author]
 
 - id: worth-it-01
   tier: advanced
@@ -342,6 +455,7 @@
   forbidden: []
   expected_note_kinds: []
   source: 'own note / DLE: valer la pena'
+  checked: [author, reference:DLE]
 
 - id: realize-01
   tier: calque
@@ -350,10 +464,15 @@
   expected_chunks:
     - surface: darse cuenta de
       regions: [neutral]
+      accepted: [caer en la cuenta de]
+  also_valid:
+    - surface: ser tarde
+      regions: [neutral]
   forbidden:
     - 'no realicé'
   expected_note_kinds: [false_friend]
   source: 'own note / DLE: realizar ≠ to realize (darse cuenta)'
+  checked: [author, reference:DLE]
 
 - id: good-time-01
   tier: calque
@@ -362,10 +481,17 @@
   expected_chunks:
     - surface: pasarlo bien
       regions: [neutral]
+      accepted:
+        [
+          { surface: pasarlo genial, regions: [ES] },
+          { surface: pasarla bien, regions: [MX, AR, CO] },
+          divertirse,
+        ]
   forbidden:
     - 'tuvimos un buen tiempo'
   expected_note_kinds: [calque]
   source: 'own note / DLE: pasarlo bien; tiempo = weather/time trap'
+  checked: [author, reference:DLE]
 
 - id: decision-01
   tier: calque
@@ -374,7 +500,1367 @@
   expected_chunks:
     - surface: tomar una decisión
       regions: [neutral]
+      accepted: [decidirse]
   forbidden:
     - 'hacer una decisión'
   expected_note_kinds: [calque]
   source: 'own note / DLE: tomar una decisión'
+  checked: [author, reference:DLE]
+
+# --- 005 regional batch (27 items). Answers written before any model run
+# ("key before model"). Reviewed by the author 2026-09-26. ---
+
+- id: straw-01
+  tier: regional
+  split: dev
+  input: 'Can I get a straw?'
+  expected_chunks:
+    - surface: pajita
+      regions: [ES, AR]
+      accepted: [{ surface: sorbete, regions: [AR] }]
+    - surface: popote
+      regions: [MX]
+    - surface: pitillo
+      regions: [CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: pajita (Arg., Chile, Esp.), popote (Méx.), pitillo (Col.; Esp. = cigarette), sorbete (Arg.)'
+  checked: [author, reference:Wiktionary]
+
+- id: peach-01
+  tier: regional
+  split: test
+  input: 'I bought some peaches'
+  expected_chunks:
+    - surface: melocotón
+      regions: [ES]
+    - surface: durazno
+      regions: [MX, AR, CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 (Wiktionary gives no regional mark for melocotón or durazno)'
+  checked: [author]
+
+- id: avocado-01
+  tier: regional
+  split: dev
+  input: "I'd like avocado on my toast"
+  expected_chunks:
+    - surface: aguacate
+      regions: [ES, MX, CO]
+    - surface: palta
+      regions: [AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: palta (Sudamérica excepto Col., Ec., Ven.); aguacate unmarked'
+  checked: [author]
+
+- id: strawberry-01
+  tier: regional
+  split: test
+  input: 'These strawberries are really sweet'
+  expected_chunks:
+    - surface: fresa
+      regions: [ES, MX, CO]
+    - surface: frutilla
+      regions: [AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: frutilla (Sudamérica)'
+  checked: [author]
+
+- id: beans-01
+  tier: regional
+  split: dev
+  input: 'I love beans'
+  expected_chunks:
+    - surface: frijoles
+      regions: [MX, CO]
+    - surface: porotos
+      regions: [AR]
+    - surface: alubias
+      regions: [ES]
+      accepted: [judías]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: frijol (América, Méx., Col.), poroto (Cono Sur), alubia (Esp.)'
+  checked: [author, reference:Wiktionary]
+
+- id: phone-01
+  tier: regional
+  split: test
+  input: 'My cell phone died'
+  expected_chunks:
+    - surface: móvil
+      regions: [ES]
+    - surface: celular
+      regions: [MX, AR, CO]
+  also_valid:
+    - surface: quedarse sin batería
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: celular (Hispanoamérica); móvil phone sense not reached'
+  checked: [author]
+
+- id: jacket-01
+  tier: regional
+  split: dev
+  input: "Bring a jacket, it's cold"
+  expected_chunks:
+    - surface: chaqueta
+      regions: [ES, CO]
+    - surface: chamarra
+      regions: [MX]
+    - surface: campera
+      regions: [AR]
+  also_valid:
+    - surface: hacer frío
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: campera (Río de la Plata, Chile, Bol., Par.); chamarra no entry; chaqueta unmarked'
+  checked: [author]
+
+- id: swimsuit-01
+  tier: regional
+  split: test
+  input: 'I forgot my swimsuit'
+  expected_chunks:
+    - surface: bañador
+      regions: [ES]
+    - surface: traje de baño
+      regions: [MX, CO]
+    - surface: malla
+      regions: [AR]
+  also_valid:
+    - surface: olvidarse
+      regions: [neutral]
+      accepted: [se me olvidó]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: bañador (Esp.); malla swimsuit sense not reached'
+  checked: [author]
+
+- id: apartment-01
+  tier: regional
+  split: dev
+  input: "We're renting an apartment"
+  expected_chunks:
+    - surface: piso
+      regions: [ES]
+    - surface: departamento
+      regions: [MX, AR]
+    - surface: apartamento
+      regions: [CO, ES]
+  also_valid:
+    - surface: alquilar
+      regions: [neutral]
+      accepted: [{ surface: rentar, regions: [MX] }]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: kids-01
+  tier: regional
+  split: test
+  input: 'The kids are playing outside'
+  expected_chunks:
+    - surface: niños
+      regions: [neutral]
+  also_valid:
+    - surface: chavales
+      regions: [ES]
+    - surface: chamacos
+      regions: [MX]
+    - surface: pibes
+      regions: [AR]
+      accepted: [chicos]
+    - surface: jugar afuera
+      regions: [neutral]
+      accepted: [{ surface: jugar fuera, regions: [ES] }]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: chaval (Esp.), chamaco (Méx.), pibe (Arg., Ur., Río de la Plata)'
+  checked: [author, reference:Wiktionary]
+
+- id: money-01
+  tier: regional
+  split: dev
+  input: "I don't have any money"
+  expected_chunks:
+    - surface: dinero
+      regions: [neutral]
+  also_valid:
+    - surface: pasta
+      regions: [ES]
+    - surface: lana
+      regions: [MX]
+    - surface: plata
+      regions: [MX, AR, CO]
+    - surface: guita
+      regions: [AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: lana (Méx.), plata (América), guita (Río de la Plata)'
+  checked: [author]
+
+- id: party-01
+  tier: regional
+  split: test
+  input: "Let's go out partying tonight"
+  expected_chunks:
+    - surface: salir de fiesta
+      regions: [neutral]
+  also_valid:
+    - surface: salir de marcha
+      regions: [ES]
+    - surface: irse de rumba
+      regions: [CO]
+    - surface: ir al antro
+      regions: [MX, AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: rumba (Col.), antro (establecimiento: Méx., Arg., …)'
+  checked: [author]
+
+- id: take-bus-01
+  tier: regional
+  split: dev
+  input: "I'm going to take the bus"
+  expected_chunks:
+    - surface: tomar el autobús
+      regions: [neutral]
+      accepted:
+        - { surface: tomar el camión, regions: [MX] }
+        - { surface: tomar el colectivo, regions: [AR] }
+        - { surface: tomar el bus, regions: [CO] }
+  also_valid:
+    - surface: coger el autobús
+      regions: [ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: glasses-01
+  tier: regional
+  split: test
+  input: "I can't find my glasses"
+  expected_chunks:
+    - surface: gafas
+      regions: [ES]
+    - surface: lentes
+      regions: [MX, AR, CO]
+      accepted: [{ surface: anteojos, regions: [AR] }]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: gafas (Esp.); lentes and anteojos unmarked'
+  checked: [author]
+
+- id: angry-01
+  tier: regional
+  split: dev
+  input: "I'm really angry"
+  expected_chunks:
+    - surface: estar enfadado
+      regions: [ES]
+    - surface: estar enojado
+      regions: [MX, AR, CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 (Wiktionary gives no regional mark for enfadado)'
+  checked: [author]
+
+- id: hurry-01
+  tier: regional
+  split: test
+  input: 'Hurry up!'
+  expected_chunks:
+    - surface: date prisa
+      regions: [ES]
+    - surface: apúrate
+      regions: [MX, AR, CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: annoying-01
+  tier: regional
+  split: dev
+  input: "That's so annoying"
+  expected_chunks:
+    - surface: qué fastidio
+      regions: [neutral]
+  also_valid:
+    - surface: qué rollo
+      regions: [ES]
+    - surface: qué lata
+      regions: [MX]
+    - surface: qué embole
+      regions: [AR]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: embole (Arg.)'
+  checked: [author]
+
+- id: excited-trip-01
+  tier: regional
+  split: test
+  input: "I'm really excited about the trip"
+  expected_chunks:
+    - surface: me emociona mucho
+      regions: [neutral]
+      accepted: [estar emocionado por]
+  also_valid:
+    - surface: me hace mucha ilusión
+      regions: [ES]
+    - surface: tener muchas ganas de
+      regions: [neutral]
+  forbidden:
+    - 'excitado'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / design doc over-tagging check: me emociona and estar emocionado are used everywhere'
+  checked: [author]
+
+- id: big-deal-01
+  tier: regional
+  split: dev
+  input: "It's no big deal"
+  expected_chunks:
+    - surface: no es para tanto
+      regions: [neutral]
+      accepted: [no es gran cosa, no pasa nada]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 (neutral-only: over-tagging target)'
+  checked: [author]
+
+- id: whats-up-01
+  tier: regional
+  split: test
+  input: "Hey, what's up?"
+  expected_chunks:
+    - surface: qué tal
+      regions: [neutral]
+  also_valid:
+    - surface: qué onda
+      regions: [MX, AR]
+    - surface: qué pasa
+      regions: [ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: beer-01
+  tier: regional
+  split: dev
+  input: "Let's grab a beer"
+  expected_chunks:
+    - surface: tomar una cerveza
+      regions: [neutral]
+      accepted: [tomarse una cerveza] # post-hoc, see seed/KEY_CHANGES.md
+  also_valid:
+    - surface: caña
+      regions: [ES]
+    - surface: chela
+      regions: [MX]
+    - surface: birra
+      regions: [AR, ES]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: caña (Esp.), chela (Méx. and others), birra (Esp., Arg. and others)'
+  checked: [author, reference:Wiktionary]
+
+- id: delicious-01
+  tier: regional
+  split: test
+  input: 'The food is delicious'
+  expected_chunks:
+    - surface: estar rico
+      regions: [neutral]
+      accepted: [estar delicioso, estar buenísimo]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 (neutral-only: over-tagging target)'
+  checked: [author]
+
+- id: bathroom-01
+  tier: regional
+  split: dev
+  input: "Excuse me, where's the bathroom?"
+  expected_chunks:
+    - surface: baño
+      regions: [neutral]
+  also_valid:
+    - surface: servicio
+      regions: [ES]
+      accepted: [aseo]
+    - surface: disculpe
+      regions: [neutral]
+      accepted: [perdone, perdón]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: pickup-01
+  tier: regional
+  split: test
+  input: 'Can you pick me up at the airport?'
+  expected_chunks:
+    - surface: recoger
+      regions: [neutral]
+  also_valid:
+    - surface: pasar a buscar
+      regions: [AR]
+    - surface: ir por
+      regions: [MX]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005'
+  checked: [author]
+
+- id: sidewalk-01
+  tier: regional
+  split: dev
+  input: 'Walk on the sidewalk'
+  expected_chunks:
+    - surface: acera
+      regions: [ES]
+    - surface: banqueta
+      regions: [MX]
+    - surface: vereda
+      regions: [AR]
+    - surface: andén
+      regions: [CO]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / Wiktionary: banqueta (Méx.), vereda (América, broader than AR); acera unmarked; andén (Col.) per author review'
+  checked: [author]
+
+- id: bill-01
+  tier: regional
+  split: test
+  input: 'Can we have the bill, please?'
+  expected_chunks:
+    - surface: la cuenta
+      regions: [neutral]
+  forbidden:
+    - 'la factura'
+  expected_note_kinds: []
+  source: 'draft 005 (neutral-only; factura = invoice, and a pastry in AR)'
+  checked: [author]
+
+- id: nice-meet-01
+  tier: regional
+  split: test
+  input: 'Nice to meet you'
+  expected_chunks:
+    - surface: mucho gusto
+      regions: [neutral]
+      accepted: [encantado, un placer]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 (neutral-only: over-tagging target)'
+  checked: [author]
+
+# --- 005 calque batch (13 items). Answers written before any model run
+# ("key before model"). Reviewed by the author 2026-09-27. ---
+
+- id: weekend-01
+  tier: calque
+  split: dev
+  input: 'What are you doing this weekend?'
+  expected_chunks:
+    - surface: este fin de semana
+      regions: [neutral]
+  forbidden:
+    - 'el weekend'
+    - 'este weekend'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / design doc calque list: this weekend (el weekend)'
+  checked: [author]
+
+- id: embarrassed-01
+  tier: calque
+  split: test
+  input: "I'm so embarrassed"
+  expected_chunks:
+    - surface: qué vergüenza
+      regions: [neutral]
+      accepted: [me da vergüenza, estar avergonzado]
+  also_valid:
+    - surface: me da pena
+      regions: [MX, CO]
+      accepted: [qué pena]
+  forbidden:
+    - 'embarazada'
+    - 'embarazado'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / classic false friend: embarazada = pregnant'
+  checked: [author]
+
+- id: library-01
+  tier: calque
+  split: dev
+  input: "I'm going to the library to study"
+  expected_chunks:
+    - surface: biblioteca
+      regions: [neutral]
+  forbidden:
+    - 'librería'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / false friend: librería = bookshop'
+  checked: [author]
+
+- id: actually-01
+  tier: calque
+  split: test
+  input: "Actually, I don't agree"
+  expected_chunks:
+    - surface: en realidad
+      regions: [neutral]
+      accepted: [la verdad es que, de hecho]
+  also_valid:
+    - surface: no estar de acuerdo
+      regions: [neutral]
+  forbidden:
+    - 'actualmente'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / false friend: actualmente = currently'
+  checked: [author]
+
+- id: attend-01
+  tier: calque
+  split: dev
+  input: "I can't attend the meeting"
+  expected_chunks:
+    - surface: asistir a
+      regions: [neutral]
+  also_valid:
+    - surface: reunión
+      regions: [neutral]
+  forbidden:
+    - 'atender la reunión'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / false friend: atender = to attend to, serve'
+  checked: [author]
+
+- id: sensible-01
+  tier: calque
+  split: test
+  input: "She's very sensible"
+  expected_chunks:
+    - surface: ser sensata
+      regions: [neutral]
+      accepted: [ser prudente, tener sentido común]
+  forbidden:
+    - 'es muy sensible'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / false friend: sensible = sensitive'
+  checked: [author]
+
+- id: call-back-01
+  tier: calque
+  split: dev
+  input: "I'll call you back later"
+  expected_chunks:
+    - surface: devolver la llamada
+      regions: [neutral]
+      accepted: [volver a llamar]
+  forbidden:
+    - 'llamar de vuelta'
+    - 'llamarte atrás'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / calque of phrasal verb call back'
+  checked: [author]
+
+- id: make-sense-01
+  tier: calque
+  split: test
+  input: "It doesn't make sense"
+  expected_chunks:
+    - surface: tener sentido
+      regions: [neutral]
+  forbidden:
+    - 'hace sentido'
+    - 'hacer sentido'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / calque: make sense -> hacer sentido'
+  checked: [author]
+
+- id: miss-bus-01
+  tier: calque
+  split: dev
+  input: 'I missed the bus'
+  expected_chunks:
+    - surface: perder el autobús
+      regions: [neutral]
+      accepted:
+        - { surface: perder el camión, regions: [MX] }
+        - { surface: perder el colectivo, regions: [AR] }
+        - { surface: perder el bus, regions: [CO] }
+  forbidden:
+    - 'extrañé el autobús'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / miss = perder (a vehicle) vs extrañar (a person): pairs with miss-you-01'
+  checked: [author]
+
+- id: fall-in-love-01
+  tier: calque
+  split: test
+  input: 'She fell in love with him'
+  expected_chunks:
+    - surface: enamorarse de
+      regions: [neutral]
+  forbidden:
+    - 'cayó en amor'
+    - 'se enamoró con'
+  expected_note_kinds: [calque, preposition]
+  source: 'draft 005 / calque fall in love; preposition enamorarse de (not con)'
+  checked: [author]
+
+- id: on-purpose-01
+  tier: calque
+  split: dev
+  input: 'I did it on purpose'
+  expected_chunks:
+    - surface: a propósito
+      regions: [neutral]
+      accepted: [adrede, { surface: aposta, regions: [ES] }]
+  forbidden:
+    - 'en propósito'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / preposition trap: on purpose -> a propósito'
+  checked: [author]
+
+- id: age-01
+  tier: calque
+  split: test
+  input: "I'm twenty-five years old"
+  expected_chunks:
+    - surface: tener años
+      regions: [neutral]
+  forbidden:
+    - 'soy veinticinco años'
+    - 'estoy veinticinco años'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / calque: to be N years old -> tener N años'
+  checked: [author]
+
+- id: excited-party-01
+  tier: calque
+  split: dev
+  input: "I'm really excited for the party"
+  expected_chunks:
+    - surface: tener muchas ganas de
+      regions: [neutral]
+      accepted: [me hace mucha ilusión, me emociona, estar emocionado por] # post-hoc, see seed/KEY_CHANGES.md
+  forbidden:
+    - 'excitado'
+    - 'excitada'
+  expected_note_kinds: [false_friend]
+  source: 'draft 005 / false friend excitado; complement present, so tener ganas de fits (cf. excited-01)'
+  checked: [author]
+
+# --- 005 advanced batch (23 items). Answers written before any model run
+# ("key before model"). Reviewed by the author 2026-09-27. ---
+
+- id: wish-subj-01
+  tier: advanced
+  split: dev
+  input: 'I wish you were here'
+  expected_chunks:
+    - surface: ojalá
+      regions: [neutral]
+      accepted: [ojalá que]
+  forbidden:
+    - 'deseo que estás'
+    - 'ojalá estás'
+  expected_note_kinds: [subjunctive_trigger]
+  source: 'draft 005 / ojalá + imperfect subjunctive'
+  checked: [author]
+
+- id: before-subj-01
+  tier: advanced
+  split: test
+  input: 'Call me before you leave'
+  expected_chunks:
+    - surface: antes de que
+      regions: [neutral]
+  forbidden:
+    - 'antes de que te vas'
+    - 'antes de que sales'
+  expected_note_kinds: [subjunctive_trigger]
+  source: 'draft 005 / antes de que always takes subjunctive'
+  checked: [author]
+
+- id: doubt-subj-01
+  tier: advanced
+  split: dev
+  input: "I doubt he'll come"
+  expected_chunks:
+    - surface: dudar que
+      regions: [neutral]
+  forbidden:
+    - 'dudo que viene'
+    - 'dudo que vendrá'
+  expected_note_kinds: [subjunctive_trigger]
+  source: 'draft 005 / dudar que + subjunctive'
+  checked: [author]
+
+- id: when-future-01
+  tier: advanced
+  split: test
+  input: "When I get home, I'll call you"
+  expected_chunks:
+    - surface: cuando llegue
+      regions: [neutral]
+  also_valid:
+    - surface: llegar a casa
+      regions: [neutral]
+  forbidden:
+    - 'cuando llegaré'
+    - 'cuando llego a casa, te llamaré'
+  expected_note_kinds: [subjunctive_trigger]
+  source: 'draft 005 / cuando + subjunctive for future events'
+  checked: [author]
+
+- id: bored-01
+  tier: advanced
+  split: dev
+  input: "I'm so bored"
+  expected_chunks:
+    - surface: estar aburrido
+      regions: [neutral]
+  forbidden:
+    - 'soy aburrido'
+    - 'soy muy aburrido'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / estar aburrido (bored) vs ser aburrido (boring)'
+  checked: [author]
+
+- id: ready-01
+  tier: advanced
+  split: test
+  input: 'Are you ready?'
+  expected_chunks:
+    - surface: estar listo
+      regions: [neutral]
+      accepted: [estar preparado]
+  forbidden:
+    - 'eres listo'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / estar listo (ready) vs ser listo (clever)'
+  checked: [author]
+
+- id: party-location-01
+  tier: advanced
+  split: dev
+  input: 'The party is at my house'
+  expected_chunks:
+    - surface: ser en
+      regions: [neutral]
+  forbidden:
+    - 'la fiesta está en mi casa'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / ser for where an event takes place'
+  checked: [author]
+
+- id: used-to-it-01
+  tier: advanced
+  split: test
+  input: "Don't worry, I'm used to it"
+  expected_chunks:
+    - surface: acostumbrarse a
+      regions: [neutral]
+      accepted: [estar acostumbrado a]
+  also_valid:
+    - surface: no te preocupes
+      regions: [neutral]
+  forbidden:
+    - 'estoy usado'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / be used to -> estar acostumbrado a'
+  checked: [author]
+
+- id: look-forward-01
+  tier: advanced
+  split: dev
+  input: "I'm looking forward to the holidays"
+  expected_chunks:
+    - surface: tener ganas de
+      regions: [neutral]
+      accepted: [esperar con ganas, esperar con ilusión]
+  also_valid:
+    - surface: las vacaciones
+      regions: [neutral]
+  forbidden:
+    - 'mirando adelante'
+  expected_note_kinds: []
+  source: 'draft 005 / look forward to -> tener ganas de (OVERVIEW open question on bare fragments)'
+  checked: [author]
+
+- id: not-feel-like-01
+  tier: advanced
+  split: test
+  input: "I don't feel like going out tonight"
+  expected_chunks:
+    - surface: no tener ganas de
+      regions: [neutral]
+  also_valid:
+    - surface: no me apetece
+      regions: [ES]
+    - surface: salir
+      regions: [neutral]
+  forbidden:
+    - 'no me siento como'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / feel like -> tener ganas de, apetecer (ES)'
+  checked: [author]
+
+- id: get-along-01
+  tier: advanced
+  split: dev
+  input: 'We get along really well'
+  expected_chunks:
+    - surface: llevarse bien
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / phrasal verb get along -> llevarse bien'
+  checked: [author]
+
+- id: give-up-01
+  tier: advanced
+  split: test
+  input: "Don't give up"
+  expected_chunks:
+    - surface: rendirse
+      regions: [neutral]
+      accepted: [darse por vencido, no te rindas]
+  forbidden:
+    - 'dar arriba'
+  expected_note_kinds: []
+  source: 'draft 005 / phrasal verb give up -> rendirse'
+  checked: [author]
+
+- id: run-out-01
+  tier: advanced
+  split: dev
+  input: 'We ran out of milk'
+  expected_chunks:
+    - surface: quedarse sin
+      regions: [neutral]
+      accepted: [acabarse]
+  forbidden:
+    - 'corrimos fuera'
+  expected_note_kinds: []
+  source: 'draft 005 / phrasal verb run out of -> quedarse sin'
+  checked: [author]
+
+- id: take-care-01
+  tier: advanced
+  split: test
+  input: "Don't worry, I'll take care of it"
+  expected_chunks:
+    - surface: encargarse de
+      regions: [neutral]
+      accepted: [ocuparse de]
+  also_valid:
+    - surface: no te preocupes
+      regions: [neutral]
+  forbidden:
+    - 'tomar cuidado'
+  expected_note_kinds: []
+  source: 'draft 005 / take care of (a task) -> encargarse de'
+  checked: [author]
+
+- id: look-for-01
+  tier: advanced
+  split: dev
+  input: "I'm looking for my keys"
+  expected_chunks:
+    - surface: buscar
+      regions: [neutral]
+  forbidden:
+    - 'buscar por'
+    - 'buscando por'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / buscar takes no preposition'
+  checked: [author]
+
+- id: think-about-01
+  tier: advanced
+  split: test
+  input: "I'm thinking about you"
+  expected_chunks:
+    - surface: pensar en
+      regions: [neutral]
+  forbidden:
+    - 'pensando sobre ti'
+    - 'pensando de ti'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / pensar en (not sobre/de) for thinking of someone'
+  checked: [author]
+
+- id: dream-about-01
+  tier: advanced
+  split: dev
+  input: 'I dreamed about you last night'
+  expected_chunks:
+    - surface: soñar con
+      regions: [neutral]
+  also_valid:
+    - surface: anoche
+      regions: [neutral]
+  forbidden:
+    - 'soñé de ti'
+    - 'soñé sobre ti'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / soñar con'
+  checked: [author]
+
+- id: married-to-01
+  tier: advanced
+  split: test
+  input: "She's married to a doctor"
+  expected_chunks:
+    - surface: estar casado con
+      regions: [neutral]
+  forbidden:
+    - 'casada a'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / casado con (not a)'
+  checked: [author]
+
+- id: rain-idiom-01
+  tier: advanced
+  split: dev
+  input: "It's raining cats and dogs"
+  expected_chunks:
+    - surface: llover a cántaros
+      regions: [neutral]
+  forbidden:
+    - 'gatos y perros'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / idiom; literal translation is a calque'
+  checked: [author]
+
+- id: cost-idiom-01
+  tier: advanced
+  split: test
+  input: 'It cost an arm and a leg'
+  expected_chunks:
+    - surface: costar un ojo de la cara
+      regions: [neutral]
+      accepted: [{ surface: costar un riñón, regions: [ES] }]
+  forbidden:
+    - 'un brazo y una pierna'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / idiom; costar un riñón mostly Spain'
+  checked: [author]
+
+- id: cake-idiom-01
+  tier: advanced
+  split: dev
+  input: "It's a piece of cake"
+  expected_chunks:
+    - surface: ser pan comido
+      regions: [neutral]
+  forbidden:
+    - 'un pedazo de pastel'
+    - 'un trozo de pastel'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / idiom; literal translation is a calque'
+  checked: [author]
+
+- id: ice-idiom-01
+  tier: advanced
+  split: test
+  input: "Let's break the ice"
+  expected_chunks:
+    - surface: romper el hielo
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / control: this idiom does transfer literally, so no trap is expected'
+  checked: [author]
+
+- id: no-idea-01
+  tier: advanced
+  split: dev
+  input: 'I have no idea'
+  expected_chunks:
+    - surface: no tener ni idea
+      regions: [neutral]
+      accepted: [ni idea]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / no tener ni idea (the "ni" is the idiomatic part)'
+  checked: [author]
+
+# --- 005 simple batch (27 items). Answers written before any model run
+# ("key before model"). Reviewed by the author 2026-09-27. ---
+
+- id: thirsty-01
+  tier: simple
+  split: dev
+  input: "I'm really thirsty"
+  expected_chunks:
+    - surface: tener sed
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / tener + noun for bodily states'
+  checked: [author]
+
+- id: cold-person-01
+  tier: simple
+  split: test
+  input: "I'm cold"
+  expected_chunks:
+    - surface: tener frío
+      regions: [neutral]
+  forbidden:
+    - 'estoy frío'
+    - 'soy frío'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / tener frío (feel cold); estar frío = cold to the touch'
+  checked: [author]
+
+- id: sleepy-01
+  tier: simple
+  split: dev
+  input: "I'm so sleepy"
+  expected_chunks:
+    - surface: tener sueño
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / tener + noun for bodily states'
+  checked: [author]
+
+- id: scared-01
+  tier: simple
+  split: test
+  input: "I'm scared of dogs"
+  expected_chunks:
+    - surface: tener miedo
+      regions: [neutral]
+      accepted: [tener miedo a, tener miedo de, dar miedo]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / tener miedo a/de, me dan miedo'
+  checked: [author]
+
+- id: lucky-01
+  tier: simple
+  split: dev
+  input: "You're so lucky"
+  expected_chunks:
+    - surface: tener suerte
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / tener suerte'
+  checked: [author]
+
+- id: windy-01
+  tier: simple
+  split: test
+  input: "It's really windy today"
+  expected_chunks:
+    - surface: hacer viento
+      regions: [neutral]
+  forbidden:
+    - 'es ventoso'
+  expected_note_kinds: []
+  source: 'draft 005 / hacer for weather'
+  checked: [author]
+
+- id: sunny-01
+  tier: simple
+  split: dev
+  input: "It's sunny"
+  expected_chunks:
+    - surface: hacer sol
+      regions: [neutral]
+      accepted: [haber sol, estar soleado]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / hacer for weather'
+  checked: [author]
+
+- id: cold-outside-01
+  tier: simple
+  split: test
+  input: "It's cold outside"
+  expected_chunks:
+    - surface: hacer frío
+      regions: [neutral]
+  forbidden:
+    - 'es frío afuera'
+    - 'está frío afuera'
+  expected_note_kinds: []
+  source: 'draft 005 / hacer frío (weather) vs tener frío (person)'
+  checked: [author]
+
+- id: time-01
+  tier: simple
+  split: dev
+  input: 'What time is it?'
+  expected_chunks:
+    - surface: qué hora es
+      regions: [neutral]
+  forbidden:
+    - 'qué tiempo es'
+  expected_note_kinds: []
+  source: 'draft 005 / hora vs tiempo'
+  checked: [author]
+
+- id: birthday-01
+  tier: simple
+  split: test
+  input: 'Happy birthday!'
+  expected_chunks:
+    - surface: feliz cumpleaños
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / fixed greeting'
+  checked: [author]
+
+- id: ago-01
+  tier: simple
+  split: dev
+  input: 'I saw him two days ago'
+  expected_chunks:
+    - surface: hace dos días
+      regions: [neutral]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / hace + time = ago'
+  checked: [author]
+
+- id: wait-01
+  tier: simple
+  split: test
+  input: 'Wait for me!'
+  expected_chunks:
+    - surface: esperar
+      regions: [neutral]
+      accepted: [espérame]
+  forbidden:
+    - 'espera por mí'
+  expected_note_kinds: [preposition]
+  source: 'draft 005 / esperar takes no preposition'
+  checked: [author]
+
+- id: help-01
+  tier: simple
+  split: dev
+  input: 'Can you help me?'
+  expected_chunks:
+    - surface: ayudar
+      regions: [neutral]
+      accepted: [echar una mano]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / ayudar, echar una mano'
+  checked: [author]
+
+- id: break-01
+  tier: simple
+  split: test
+  input: 'I need a break'
+  expected_chunks:
+    - surface: tomar un descanso
+      regions: [neutral]
+      accepted: [descansar, hacer una pausa]
+  forbidden:
+    - 'una rotura'
+  expected_note_kinds: []
+  source: 'draft 005 / break = rest, not rotura'
+  checked: [author]
+
+- id: like-coffee-01
+  tier: simple
+  split: dev
+  input: 'I like coffee'
+  expected_chunks:
+    - surface: gustar
+      regions: [neutral]
+      accepted: [me gusta]
+  forbidden:
+    - 'yo gusto'
+  expected_note_kinds: []
+  source: 'draft 005 / gustar construction'
+  checked: [author]
+
+- id: love-song-01
+  tier: simple
+  split: test
+  input: 'I love this song'
+  expected_chunks:
+    - surface: encantar
+      regions: [neutral]
+      accepted: [me encanta]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / encantar for liking a lot'
+  checked: [author]
+
+- id: see-you-01
+  tier: simple
+  split: dev
+  input: 'See you later'
+  expected_chunks:
+    - surface: hasta luego
+      regions: [neutral]
+      accepted: [nos vemos, hasta pronto]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / farewells'
+  checked: [author]
+
+- id: welcome-01
+  tier: simple
+  split: test
+  input: "You're welcome"
+  expected_chunks:
+    - surface: de nada
+      regions: [neutral]
+      accepted: [no hay de qué, { surface: con gusto, regions: [MX, CO] }]
+  forbidden:
+    - 'eres bienvenido'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / reply to thanks; eres bienvenido is a calque'
+  checked: [author]
+
+- id: sorry-late-01
+  tier: simple
+  split: dev
+  input: "Sorry I'm late"
+  expected_chunks:
+    - surface: llegar tarde
+      regions: [neutral]
+  also_valid:
+    - surface: perdón
+      regions: [neutral]
+      accepted: [lo siento, disculpa, perdona]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / apology + llegar tarde'
+  checked: [author]
+
+- id: bless-you-01
+  tier: simple
+  split: test
+  input: 'Bless you!'
+  expected_chunks:
+    - surface: salud
+      regions: [neutral]
+      accepted: [{ surface: jesús, regions: [ES] }]
+  forbidden:
+    - 'bendito seas'
+    - 'te bendigo'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / after a sneeze: salud; jesús mainly Spain'
+  checked: [author]
+
+- id: good-luck-01
+  tier: simple
+  split: dev
+  input: 'Good luck on your exam'
+  expected_chunks:
+    - surface: buena suerte
+      regions: [neutral]
+      accepted: [mucha suerte]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / good luck wishes'
+  checked: [author]
+
+- id: my-turn-01
+  tier: simple
+  split: test
+  input: "It's my turn"
+  expected_chunks:
+    - surface: me toca
+      regions: [neutral]
+      accepted: [es mi turno, tocarle a alguien]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / tocar for turns'
+  checked: [author]
+
+- id: agree-01
+  tier: simple
+  split: dev
+  input: 'I agree'
+  expected_chunks:
+    - surface: estar de acuerdo
+      regions: [neutral]
+  forbidden:
+    - 'soy de acuerdo'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / estar de acuerdo'
+  checked: [author]
+
+- id: how-are-you-01
+  tier: simple
+  split: test
+  input: 'How are you?'
+  expected_chunks:
+    - surface: cómo estás
+      regions: [neutral]
+      accepted: [qué tal]
+  forbidden:
+    - 'cómo eres'
+  expected_note_kinds: [ser_estar]
+  source: 'draft 005 / cómo estás vs cómo eres'
+  checked: [author]
+
+- id: name-01
+  tier: simple
+  split: dev
+  input: 'My name is Ana'
+  expected_chunks:
+    - surface: llamarse
+      regions: [neutral]
+      accepted: [me llamo]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / llamarse'
+  checked: [author]
+
+- id: light-off-01
+  tier: simple
+  split: test
+  input: 'Turn off the light'
+  expected_chunks:
+    - surface: apagar la luz
+      regions: [neutral]
+  forbidden:
+    - 'girar la luz'
+  expected_note_kinds: [calque]
+  source: 'draft 005 / turn off -> apagar'
+  checked: [author]
+
+- id: shower-01
+  tier: simple
+  split: test
+  input: "I'm going to take a shower"
+  expected_chunks:
+    - surface: ducharse
+      regions: [neutral]
+      accepted: [darse una ducha, { surface: bañarse, regions: [MX, CO] }]
+  forbidden: []
+  expected_note_kinds: []
+  source: 'draft 005 / ducharse; bañarse = shower in MX and CO'
+  checked: [author]

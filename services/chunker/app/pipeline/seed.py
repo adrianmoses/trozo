@@ -19,7 +19,7 @@ def default_seed_path(module_file: Path | None = None) -> Path | None:
     parents = (module_file or Path(__file__)).parents
     if len(parents) <= 4:
         return None
-    return parents[4] / "evals" / "seed" / "seed_v0.yaml"
+    return parents[4] / "evals" / "seed" / "seed_v1.yaml"
 
 
 class SeedIndex:
