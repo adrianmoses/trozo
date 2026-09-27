@@ -33,7 +33,7 @@ Monorepo layout:
 - `services/chunker` — Python 3.12, FastAPI, Pydantic v2. Provider SDKs behind a small `LLMClient` interface so primary and verifier models are swappable per eval run.
 - `evals/` — YAML seed set, runner, Markdown reports (Python, shares the chunker's environment).
 - `packages/schema` — JSON Schema exported from Pydantic, used to generate TS types for the web app.
-- Deploy: Docker Compose locally (one `docker compose up` for demos). Production (planned, roadmap 006–009): Cloudflare hosts the web app on Workers and the chunk service on Containers, Postgres is Neon, and the custom domain sits behind Cloudflare Access (single user, so no app-level auth).
+- Deploy: Docker Compose locally (one `docker compose up` for demos). Production (planned, roadmap 006–009): Fly.io runs the web app and the chunk service from their Docker images (the chunker on a private network only), Postgres is Neon, and the custom domain is on Cloudflare behind Cloudflare Access (single user, so no app-level auth).
 
 ## Testing Suite <!-- required -->
 
