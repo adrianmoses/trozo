@@ -12,6 +12,14 @@
 
 Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one Postgres database. The web app never calls an LLM directly — it talks to the chunk service through server functions (with an optional service token), so API keys stay server-side. The chunk service keeps its own disk response cache and holds no user data; the web app owns Postgres (saved chunks, from 004). The eval CLI calls the same `POST /v1/chunk` endpoint as the UI, so evals test exactly what users get.
 
+**Production topology (planned, roadmap 006–009).** Locally everything runs in Docker Compose. In production:
+
+- The web app runs on **Cloudflare Workers** (TanStack Start with a Cloudflare build preset) on the custom domain, behind **Cloudflare Access**.
+- The chunk service runs on **Cloudflare Containers**, reachable only from the web Worker through a service binding plus `CHUNKER_TOKEN`, never from the public internet.
+- Postgres is **Neon** (a production branch, with branches for previews). Drizzle uses Neon's serverless driver or Hyperdrive in Workers, and node-postgres locally.
+- The response cache moves off container disk to R2 or KV.
+- The eval CLI keeps running against a local chunker.
+
 ```mermaid
 flowchart LR
   UI[TanStack Start UI] --> SF[Server functions]
@@ -54,9 +62,10 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 
 - **Primary LLM:** Anthropic Claude Sonnet 5 (`claude-sonnet-5`) for generation and self-consistency samples, via `messages.parse` structured output. It rejects temperature/top-p/top-k, so there is no sampling-temperature lever; self-consistency uses default sampling.
 - **Verifier LLM:** OpenAI `gpt-5.4-mini`, a different vendor so errors are less correlated; answers yes/no/unsure per claim via structured output. Optional: without `OPENAI_API_KEY`, full mode uses consistency only.
-- Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`).
+- Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`): Docker `postgres:16` locally, **Neon** in production (planned).
 - spaCy with `es_core_news_sm` for lemma-level validation, seed matching and consistency matching.
-- Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development; Fly.io/Railway-style host for deploy.
+- Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development.
+- **Cloudflare** for production (planned, 006–009): Workers (web), Containers (chunk service), R2 or KV (response cache), DNS/TLS for the custom domain, and Access (authentication in front of the site).
 
 ## Key Constraints <!-- required -->
 
@@ -68,11 +77,13 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - The full-sentence `translation` must contain every chunk's surface (lemma-level); the service returns `translation_highlight` ranges so the UI can underline them.
 - Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is measured by the evals since 005: 0.05 on test with p1).
 - Full mode costs about six LLM calls per new phrase (five primary, one verifier); there is no cost cap.
+- Production has no app-level auth (OVERVIEW non-goal), so the whole domain must sit behind Cloudflare Access, and the chunk service must not be publicly reachable: LLM keys and saved chunks are otherwise open to anyone with the URL. LLM keys, `CHUNKER_TOKEN` and `DATABASE_URL` live as Cloudflare secrets.
 - TanStack Start returns server-function errors as HTTP 200 with the error serialized in the body; a 200 in the network tab is not proof of success, so client error handlers log the cause.
 
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
+- Production deployment (roadmap 006–009): Neon serverless driver vs Hyperdrive for Drizzle in Workers (006); chunker image size, memory and cold start with the spaCy model on Containers, and where the response cache lives (R2, KV, or evals only) (007).
 - Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
 Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
@@ -85,3 +96,4 @@ Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, 
 | 2026-09-25 | Post-003 refresh: models and no-temperature constraint, disk cache in the chunker, full-mode design and tuned thresholds, `unrated` rule, relabel-on-read, resolved decisions |
 | 2026-09-26 | 004: saved-chunk server functions, confidence sync, `cloze` export with Anki file headers, `migrate` service, Postgres 15+, Start error-status note                           |
 | 2026-09-27 | 005 and bug 003: 120-item seed with accepted/also-valid answers, region metrics, thresholds kept, matcher version in the cache key, `meta.dropped`, open decisions resolved   |
+| 2026-09-27 | Planned production topology: Cloudflare Workers (web) and Containers (chunker), Neon Postgres, Cloudflare Access; replaces the Fly.io/Railway deploy note                     |
