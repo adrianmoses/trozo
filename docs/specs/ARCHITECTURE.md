@@ -16,7 +16,7 @@ Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one 
 
 - Both services run on **Fly.io** from their existing Docker images, as two Fly apps in the same organization and region.
 - The web app is the only public entry point. The custom domain is on **Cloudflare** (DNS proxied to Fly) behind **Cloudflare Access**, and the web app rejects any request without a valid Access JWT (`Cf-Access-Jwt-Assertion`), so the app's `*.fly.dev` hostname can't bypass Access.
-- The chunk service has no public IP. The web app reaches it over Fly's private network (Flycast) with `CHUNKER_TOKEN`.
+- The chunk service has no public IP. The web app reaches it over Fly's private network (Flycast, `http://trozo-chunker.flycast`) with `CHUNKER_TOKEN`; on Fly the chunk endpoint refuses to serve (503) without the token set. Deployed in 007: one shared-cpu-1x 512 MB machine in `fra` that suspends when idle and resumes on the next Flycast request (about 0.9 s; about 11 s from a stopped machine).
 - Postgres is **Neon** (a production branch, with a branch per preview). Drizzle keeps node-postgres everywhere; production uses Neon's pooled connection string.
 - The response cache stays on disk, on a Fly volume attached to the chunker.
 - Migrations run as the web app's Fly `release_command`, before the new version takes traffic.
@@ -86,10 +86,10 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
-- Production deployment (roadmap 007–009): chunker VM size, cold start with the spaCy model and auto-stop behaviour on Fly (007); whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
+- Production deployment (roadmap 009): whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
 - Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
-Resolved: primary and verifier models (001, 003); migrations from the runtime image via a bundled drizzle-orm migrator (006); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
+Resolved: primary and verifier models (001, 003); migrations from the runtime image via a bundled drizzle-orm migrator (006); chunker VM size, cold start and idle behaviour (007: 512 MB, suspend when idle); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
 
 ## Revision History
 
@@ -102,3 +102,4 @@ Resolved: primary and verifier models (001, 003); migrations from the runtime im
 | 2026-09-27 | Planned production topology: Cloudflare Workers (web) and Containers (chunker), Neon Postgres, Cloudflare Access; replaces the Fly.io/Railway deploy note                          |
 | 2026-09-27 | Production topology revised: both services on Fly.io (private chunker, volume-backed cache, per-PR previews), Neon Postgres over node-postgres, Cloudflare for DNS and Access only |
 | 2026-09-29 | 006: Access middleware, bundled migrate script, `/healthz`, seed baked into the chunker image, `seed_entries` in meta; migrations decision resolved                                |
+| 2026-09-29 | 007: chunker deployed on Fly (private, Flycast, token fail-closed, 512 MB, suspend when idle, cache volume); VM and idle decision resolved                                         |
