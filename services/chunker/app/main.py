@@ -66,15 +66,27 @@ async def unauthorized_handler(_: Request, exc: Unauthorized) -> JSONResponse:
     return _error(401, "unauthorized", str(exc) or "missing or invalid service token")
 
 
+class Misconfigured(Exception):
+    pass
+
+
+@app.exception_handler(Misconfigured)
+async def misconfigured_handler(_: Request, exc: Misconfigured) -> JSONResponse:
+    return _error(503, "service_misconfigured", str(exc))
+
+
 def require_token(authorization: str | None = Header(default=None)) -> None:
-    """Opt-in shared-secret check for the chunk endpoint.
+    """Shared-secret check for the chunk endpoint.
 
     Reads CHUNKER_TOKEN per request (never at import). Unset means open, so
-    local dev and the test suite need no configuration. Health and meta are
+    local dev and the test suite need no configuration, except on Fly
+    (FLY_APP_NAME set), where it fails closed (007). Health and meta are
     never guarded.
     """
     expected = os.environ.get("CHUNKER_TOKEN")
     if not expected:
+        if os.environ.get("FLY_APP_NAME"):
+            raise Misconfigured("CHUNKER_TOKEN is not set; refusing to serve on Fly")
         return
     provided = ""
     if authorization and authorization.lower().startswith("bearer "):

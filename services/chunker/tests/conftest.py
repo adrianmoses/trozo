@@ -113,6 +113,7 @@ def client(fake_llm: FakeLLMClient, tmp_path, monkeypatch) -> TestClient:
 
     load_seed_index.cache_clear()
     monkeypatch.delenv("CHUNKER_TOKEN", raising=False)
+    monkeypatch.delenv("FLY_APP_NAME", raising=False)
     monkeypatch.delenv("CHUNKER_SAMPLE_PERTURB", raising=False)
     app.state.llm = fake_llm
     app.state.verifier = None  # no verifier unless a test installs one
