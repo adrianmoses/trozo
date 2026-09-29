@@ -19,7 +19,7 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 | 003 | Full confidence (self-consistency + verifier wired; thresholds tuned on `dev` split)                                                                                                                          | implemented | [spec](003-full-confidence/spec.md)      |
 | 004 | Saving + export (Postgres `saved_chunks`, `/saved` route, Anki CSV and TXT export)                                                                                                                            | implemented | [spec](004-saving-export/spec.md)        |
 | 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)                                                                                       | implemented | [spec](005-seed-eval-report/spec.md)     |
-| 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory)                    | planned     | —                                        |
+| 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory)                    | in-progress | [spec](006-deploy-readiness/spec.md)     |
 | 007 | Chunker on Fly.io (private app with no public IP, reached over Flycast with the service token, volume for the response cache, VM size and cold start with the spaCy model)                                    | planned     | —                                        |
 | 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)                             | planned     | —                                        |
 | 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; per-PR Fly preview apps on a Neon branch, torn down on close; logs, `meta.dropped` rate, LLM spend limits) | planned     | —                                        |
@@ -65,3 +65,4 @@ Constraints each spec must settle:
 | 2026-09-27 | 005 implemented (decision record complete)                                      |
 | 2026-09-27 | Added 006–009: production deployment on Cloudflare with Neon Postgres           |
 | 2026-09-27 | 006–009 revised: Fly.io hosts both services; Cloudflare for DNS and Access only |
+| 2026-09-29 | 006 spec drafted, status in-progress                                            |
