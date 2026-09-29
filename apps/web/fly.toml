@@ -1,0 +1,38 @@
+# Web app on Fly.io (008). Public, but only through trozoapp.com behind
+# Cloudflare Access; the app itself rejects requests without a valid Access
+# JWT (006), so trozo-web.fly.dev is not a way around it. Deploy from the repo
+# root:
+#   fly deploy . --config apps/web/fly.toml --ha=false
+app = "trozo-web"
+primary_region = "fra"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# Applies drizzle/ migrations to DATABASE_URL (Neon) before the release takes
+# traffic; a failed migration fails the deploy.
+[deploy]
+  release_command = "node migrate.mjs"
+
+[env]
+  CHUNKER_URL = "http://trozo-chunker.flycast"
+  # Cloudflare Zero Trust team; CF_ACCESS_AUD is a Fly secret.
+  CF_ACCESS_TEAM_DOMAIN = "round-cake-32d9.cloudflareaccess.com"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

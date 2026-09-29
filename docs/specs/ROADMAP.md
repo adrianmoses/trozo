@@ -21,7 +21,7 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 | 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)                                                                                       | implemented | [spec](005-seed-eval-report/spec.md)     |
 | 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory)                    | implemented | [spec](006-deploy-readiness/spec.md)     |
 | 007 | Chunker on Fly.io (private app with no public IP, reached over Flycast with the service token, volume for the response cache, VM size and cold start with the spaCy model)                                    | implemented | [spec](007-chunker-fly/spec.md)          |
-| 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)                             | planned     | —                                        |
+| 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)                             | implemented | [spec](008-web-fly-domain/spec.md)       |
 | 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; per-PR Fly preview apps on a Neon branch, torn down on close; logs, `meta.dropped` rate, LLM spend limits) | planned     | —                                        |
 
 ## Production deployment (006–009)
@@ -69,3 +69,5 @@ Constraints each spec must settle:
 | 2026-09-29 | 006 implemented (decision record complete)                                      |
 | 2026-09-29 | 007 spec drafted, status in-progress                                            |
 | 2026-09-29 | 007 implemented (decision record complete)                                      |
+| 2026-09-29 | 008 spec drafted, status in-progress                                            |
+| 2026-09-29 | 008 implemented (decision record complete); production live at trozoapp.com     |
