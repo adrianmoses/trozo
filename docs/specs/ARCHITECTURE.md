@@ -12,7 +12,7 @@
 
 Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one Postgres database. The web app never calls an LLM directly — it talks to the chunk service through server functions (with an optional service token), so API keys stay server-side. The chunk service keeps its own disk response cache and holds no user data; the web app owns Postgres (saved chunks, from 004). The eval CLI calls the same `POST /v1/chunk` endpoint as the UI, so evals test exactly what users get.
 
-**Production topology (planned, roadmap 006–009).** Locally everything runs in Docker Compose. In production:
+**Production topology (live since 008 at https://trozoapp.com; CI/CD and previews in 009).** Locally everything runs in Docker Compose. In production (runbook: `docs/DEPLOY.md`):
 
 - Both services run on **Fly.io** from their existing Docker images, as two Fly apps in the same organization and region.
 - The web app is the only public entry point. The custom domain is on **Cloudflare** (DNS proxied to Fly) behind **Cloudflare Access**, and the web app rejects any request without a valid Access JWT (`Cf-Access-Jwt-Assertion`), so the app's `*.fly.dev` hostname can't bypass Access.
@@ -20,6 +20,7 @@ Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one 
 - Postgres is **Neon** (a production branch, with a branch per preview). Drizzle keeps node-postgres everywhere; production uses Neon's pooled connection string.
 - The response cache stays on disk, on a Fly volume attached to the chunker.
 - Migrations run as the web app's Fly `release_command`, before the new version takes traffic.
+- The web app suspends when idle like the chunker (256 MB machine); after a quiet spell the first request wakes the web app, then the chunker, then Neon, each in about a second.
 - The eval CLI keeps running against a local chunker.
 
 ```mermaid
@@ -64,10 +65,10 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 
 - **Primary LLM:** Anthropic Claude Sonnet 5 (`claude-sonnet-5`) for generation and self-consistency samples, via `messages.parse` structured output. It rejects temperature/top-p/top-k, so there is no sampling-temperature lever; self-consistency uses default sampling.
 - **Verifier LLM:** OpenAI `gpt-5.4-mini`, a different vendor so errors are less correlated; answers yes/no/unsure per claim via structured output. Optional: without `OPENAI_API_KEY`, full mode uses consistency only.
-- Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`): Docker `postgres:16` locally, **Neon** in production (planned).
+- Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`): Docker `postgres:16` locally, **Neon** in production (`aws-eu-central-1`, pooled endpoint, `sslmode=verify-full`).
 - spaCy with `es_core_news_sm` for lemma-level validation, seed matching and consistency matching.
 - Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development.
-- **Fly.io** for production (planned, 006–009): both services as Fly apps, private networking between them, a volume for the chunker's response cache, and per-PR preview apps.
+- **Fly.io** for production: `trozo-web` and `trozo-chunker` in `fra`, private networking between them, a volume for the chunker's response cache; per-PR preview apps planned (009).
 - **Cloudflare** for DNS/TLS on the custom domain and Access (authentication in front of the site); it does not host code.
 
 ## Key Constraints <!-- required -->
@@ -103,3 +104,4 @@ Resolved: primary and verifier models (001, 003); migrations from the runtime im
 | 2026-09-27 | Production topology revised: both services on Fly.io (private chunker, volume-backed cache, per-PR previews), Neon Postgres over node-postgres, Cloudflare for DNS and Access only |
 | 2026-09-29 | 006: Access middleware, bundled migrate script, `/healthz`, seed baked into the chunker image, `seed_entries` in meta; migrations decision resolved                                |
 | 2026-09-29 | 007: chunker deployed on Fly (private, Flycast, token fail-closed, 512 MB, suspend when idle, cache volume); VM and idle decision resolved                                         |
+| 2026-09-29 | 008: production live at trozoapp.com (web on Fly, Neon, Cloudflare DNS/TLS/Access); topology no longer planned                                                                     |

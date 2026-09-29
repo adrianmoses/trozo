@@ -2,6 +2,8 @@
 
 A web tool that turns an English phrase into reusable Spanish chunks — patterns like **tener ganas de** + inf. — with regional variants, derived confidence labels, and warnings about calques and false friends. The eval harness is a first-class part of the project: every prompt or model change is measured against a seed set.
 
+Production runs at **https://trozoapp.com**, behind Cloudflare Access (single user, so it is private); see `docs/DEPLOY.md` for how it is deployed.
+
 See `docs/specs/` for the product overview, architecture, roadmap and per-feature specs and decision records; `bugs/` for bug fix records; `docs/Chunks Translator — Spec.md` is the original design doc.
 
 ## Status
@@ -13,6 +15,9 @@ See `docs/specs/` for the product overview, architecture, roadmap and per-featur
 | 003 Full confidence (self-consistency + OpenAI verifier, background upgrade in the UI, calibration metrics) | implemented |
 | 004 Saving + export (Postgres, `/saved`, Anki CSV / TXT)                                                    | implemented |
 | 005 Seed to 120 + eval report                                                                               | implemented |
+| 006 Deploy readiness (Access JWT check, bundled migrations, `/healthz`, seed in the chunker image)          | implemented |
+| 007 Chunker on Fly.io (private, Flycast only)                                                               | implemented |
+| 008 Web on Fly.io at https://trozoapp.com (Neon, Cloudflare Access)                                         | implemented |
 
 ## Layout
 

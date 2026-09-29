@@ -1,13 +1,14 @@
 # Deploying trozo
 
-Production target (roadmap 006–009): both services on **Fly.io**, Postgres on **Neon**, and the custom domain **trozoapp.com** on **Cloudflare** behind **Cloudflare Access**. This page is the config and secrets inventory. 007 and 008 add the Fly commands as the apps are created.
+Production (live since 2026-09-29, roadmap 006–008): both services on **Fly.io**, Postgres on **Neon**, and **https://trozoapp.com** on **Cloudflare** behind **Cloudflare Access** (only `adrian@thesolo.dev` can sign in). This page is the config and secrets inventory, the deploy commands, and the Cloudflare checklist. 009 automates the deploys.
 
-| Piece    | Where                                     | Region                                    |
-| -------- | ----------------------------------------- | ----------------------------------------- |
-| Postgres | Neon project, `main` branch, db `trozo`   | `aws-eu-central-1` (Frankfurt)            |
-| Web      | Fly app (public, behind Access)           | `fra`                                     |
-| Chunker  | Fly app (no public IP, Flycast only)      | `fra`, single machine with a cache volume |
-| Domain   | `trozoapp.com`, Cloudflare DNS and Access | —                                         |
+| Piece    | Where                                                     | Region                                    |
+| -------- | --------------------------------------------------------- | ----------------------------------------- |
+| Postgres | Neon project, `main` branch, db `neondb`, pooled endpoint | `aws-eu-central-1` (Frankfurt)            |
+| Web      | Fly app `trozo-web` (public IPs, behind Access)           | `fra`, single machine                     |
+| Chunker  | Fly app `trozo-chunker` (no public IP, Flycast only)      | `fra`, single machine with a cache volume |
+| Domain   | `trozoapp.com`, registered at Cloudflare; DNS and Access  | —                                         |
+| Access   | Zero Trust team `round-cake-32d9`, application `trozo`    | —                                         |
 
 ## Images
 
@@ -33,14 +34,74 @@ docker build -f services/chunker/Dockerfile .
 | Variable                | Kind       | Production value                                                                              | Read by                                              |
 | ----------------------- | ---------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | `DATABASE_URL`          | Fly secret | Neon **pooled** connection string (host contains `-pooler`), ending in `?sslmode=verify-full` | `src/db/index.ts`, `migrate.mjs`                     |
-| `CHUNKER_URL`           | config     | The chunker's Flycast address (007), e.g. `http://trozo-chunker.flycast`                      | `src/lib/chunker.server.ts`                          |
+| `CHUNKER_URL`           | `fly.toml` | `http://trozo-chunker.flycast`                                                                | `src/lib/chunker.server.ts`                          |
 | `CHUNKER_TOKEN`         | Fly secret | Random string (e.g. `openssl rand -hex 32`); same value as the chunker's                      | `src/lib/chunker.server.ts`                          |
-| `CF_ACCESS_TEAM_DOMAIN` | config     | Full team domain, e.g. `<team>.cloudflareaccess.com` (008)                                    | `src/server/access.server.ts`                        |
-| `CF_ACCESS_AUD`         | Fly secret | The Access application's audience (AUD) tag (008)                                             | `src/server/access.server.ts`                        |
+| `CF_ACCESS_TEAM_DOMAIN` | `fly.toml` | `round-cake-32d9.cloudflareaccess.com`                                                        | `src/server/access.server.ts`                        |
+| `CF_ACCESS_AUD`         | Fly secret | The Access application's audience (AUD) tag                                                   | `src/server/access.server.ts`                        |
 | `PORT`                  | image      | `3000`                                                                                        | Nitro server                                         |
 | `FLY_APP_NAME`          | set by Fly | —                                                                                             | `src/server/access.server.ts` (turns on fail-closed) |
 
 **Access check.** When `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` are both set, every server request (pages, server functions, `/api/export`) needs a valid `Cf-Access-Jwt-Assertion` header, or gets 403. On Fly with either value missing, every request except `/healthz` gets 503 naming the missing variable, so the app never serves unauthenticated on its public `*.fly.dev` hostname. Off Fly (local dev, Compose) with neither set, there is no check. Static assets (`/assets/*`, files from `public/`) are served before the check. They hold no data or keys.
+
+**Neon URL shape.** Use the pooled string from the Neon console with `sslmode=verify-full` in place of `sslmode=require` (TLS 1.3 with a verified `*.eu-central-1.aws.neon.tech` certificate; Neon refuses plaintext). Neon's `channel_binding=require` also works with node-postgres and may be kept or dropped. Locally the URL lives in the git-ignored `.env.production`; never paste it into a command.
+
+### Deploying the web app (008)
+
+Fly app `trozo-web` in the `personal` org, config in `apps/web/fly.toml`. Run flyctl from the repo root, as for the chunker.
+
+One-time setup (done 2026-09-29):
+
+```bash
+fly apps create trozo-web --org personal
+# CHUNKER_TOKEN must equal the chunker's (compare digests in `fly secrets list` for both apps).
+fly secrets set --stage -a trozo-web CHUNKER_TOKEN=<chunker's token> \
+  DATABASE_URL="$(grep '^DATABASE_URL=' .env.production | cut -d= -f2-)"
+fly deploy . --config apps/web/fly.toml --ha=false      # allocates a shared IPv4 and a dedicated IPv6
+fly certs add trozoapp.com -a trozo-web
+fly certs setup trozoapp.com -a trozo-web                # prints the _acme-challenge and _fly-ownership records
+# ...Cloudflare checklist below, then:
+fly secrets set --stage -a trozo-web CF_ACCESS_AUD=<AUD tag>
+fly deploy . --config apps/web/fly.toml --ha=false
+```
+
+Every later deploy:
+
+```bash
+fly deploy . --config apps/web/fly.toml --ha=false
+```
+
+Each deploy first runs `node migrate.mjs` on a one-off release machine against Neon; `[migrate] done` in `fly logs -a trozo-web` confirms it, and a failed migration aborts the deploy with the previous release still serving. Until `CF_ACCESS_AUD` and `CF_ACCESS_TEAM_DOMAIN` are both set, the app returns 503 for everything but `/healthz`, so it is never open.
+
+**Protection check** after any deploy: `https://trozo-web.fly.dev/` must return 403 and `/healthz` 200; `https://trozoapp.com/` without a session must redirect (302) to `round-cake-32d9.cloudflareaccess.com`.
+
+**Idle behaviour and size.** Suspends when idle, like the chunker; health checks don't keep it awake. shared-cpu-1x, 256 MB: measured peak RSS was about 101 MB after SSR, saving, `/saved` and all three exports. A cold boot (stopped machine) takes about 2 s to `Listening on :3000`.
+
+## Cloudflare (008)
+
+`trozoapp.com` is registered at Cloudflare, so the zone already uses Cloudflare's nameservers. Settings, in the order they were applied:
+
+1. **DNS** (zone `trozoapp.com` → DNS → Records):
+
+   | Type  | Name              | Content                             | Proxy           |
+   | ----- | ----------------- | ----------------------------------- | --------------- |
+   | A     | `@`               | `66.241.124.134` (Fly shared IPv4)  | Proxied         |
+   | AAAA  | `@`               | `2a09:8280:1::19f:f704:0` (Fly v6)  | Proxied         |
+   | AAAA  | `www`             | `100::` (placeholder; see redirect) | Proxied         |
+   | CNAME | `_acme-challenge` | `trozoapp.com.e5d5xrj.flydns.net`   | DNS only (grey) |
+   | TXT   | `_fly-ownership`  | `app-e5d5xrj`                       | —               |
+
+   The `_acme-challenge` CNAME lets Fly issue its certificate by DNS validation while Cloudflare's proxy is in front; `_fly-ownership` proves the domain to Fly behind a proxy. If `fly ips list -a trozo-web` ever changes, update the A/AAAA records (`fly certs setup trozoapp.com -a trozo-web` prints the current values).
+
+2. **Certificate:** wait for `fly certs check trozoapp.com -a trozo-web` to show `Issued` **before** step 3.
+3. **SSL/TLS:** encryption mode **Full (strict)**; Edge Certificates → **Always Use HTTPS** on.
+4. **Redirect** (Rules → Redirect Rules): hostname equals `www.trozoapp.com` → dynamic `concat("https://trozoapp.com", http.request.uri.path)`, 301, preserve query string. It runs before Access, so `www` visitors are redirected first and log in on the apex.
+5. **Access** (Zero Trust, Free plan, team `round-cake-32d9`) → Access → Applications → Self-hosted `trozo`:
+   - public hostnames `trozoapp.com` and `www.trozoapp.com`;
+   - session duration 1 month;
+   - policy `author`: Allow, include Emails `adrian@thesolo.dev`;
+   - login method One-time PIN.
+
+   Copy the application's **AUD tag** into the `CF_ACCESS_AUD` Fly secret. A new Access application means a new AUD: update the secret, or every request returns 403.
 
 ## Chunker
 
