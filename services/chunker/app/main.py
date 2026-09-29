@@ -121,6 +121,9 @@ def meta() -> dict:
         "prompt_version": current_version(),
         "verifier_model": (v.model if (v := get_verifier()) else None),
         "full_confidence": {"samples": N_SAMPLES, "t_high": T_HIGH, "t_med": T_MED},
+        # Distinct seed surfaces loaded; 0 means no chunk can be seed-verified,
+        # so a deploy checks it (006).
+        "seed_entries": len(load_seed_index()),
     }
 
 

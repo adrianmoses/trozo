@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as HealthzRouteImport } from './routes/healthz'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as ApiExportRouteImport } from './routes/api/export'
 
@@ -22,6 +23,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HealthzRoute = HealthzRouteImport.update({
+  id: '/healthz',
+  path: '/healthz',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SavedRoute = SavedRouteImport.update({
@@ -38,12 +44,14 @@ const ApiExportRoute = ApiExportRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/healthz': typeof HealthzRoute
   '/saved': typeof SavedRoute
   '/api/export': typeof ApiExportRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/healthz': typeof HealthzRoute
   '/saved': typeof SavedRoute
   '/api/export': typeof ApiExportRoute
 }
@@ -51,20 +59,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/healthz': typeof HealthzRoute
   '/saved': typeof SavedRoute
   '/api/export': typeof ApiExportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/about' | '/saved' | '/api/export'
+  fullPaths: '/' | '/about' | '/healthz' | '/saved' | '/api/export'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/saved' | '/api/export'
-  id: '__root__' | '/' | '/about' | '/saved' | '/api/export'
+  to: '/' | '/about' | '/healthz' | '/saved' | '/api/export'
+  id: '__root__' | '/' | '/about' | '/healthz' | '/saved' | '/api/export'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  HealthzRoute: typeof HealthzRoute
   SavedRoute: typeof SavedRoute
   ApiExportRoute: typeof ApiExportRoute
 }
@@ -83,6 +93,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/healthz': {
+      id: '/healthz'
+      path: '/healthz'
+      fullPath: '/healthz'
+      preLoaderRoute: typeof HealthzRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/saved': {
@@ -105,18 +122,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  HealthzRoute: HealthzRoute,
   SavedRoute: SavedRoute,
   ApiExportRoute: ApiExportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

@@ -73,6 +73,24 @@ def test_meta_endpoint(client) -> None:
     assert "ES" in body["regions"]
     assert "calque" in body["note_kinds"]
     assert body["prompt_version"] == "p1"
+    assert body["seed_entries"] == 0  # the client fixture points at no seed
+
+
+def test_meta_reports_loaded_seed_entries(client, tmp_path, monkeypatch) -> None:
+    from app.pipeline.seed import load_seed_index
+
+    seed = tmp_path / "seed.yaml"
+    seed.write_text(
+        "- id: x\n  expected_chunks:\n    - surface: echar de menos\n      regions: [ES]\n"
+        "    - surface: tener ganas de\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("CHUNKER_SEED_PATH", str(seed))
+    load_seed_index.cache_clear()
+    try:
+        assert client.get("/v1/meta").json()["seed_entries"] == 2
+    finally:
+        load_seed_index.cache_clear()
 
 
 def test_translation_highlight_null_when_no_match(client, fake_llm, monkeypatch) -> None:

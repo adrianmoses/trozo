@@ -1,12 +1,18 @@
-node_modules
+# Both images build from the repo root (006). Keep the context small and
+# never ship local env files or caches.
 **/node_modules
-**/.output
-**/.nitro
-**/.tanstack
 **/.venv
 **/__pycache__
 **/.pytest_cache
-docs
+**/.cache
+**/.output
+**/.nitro
+**/.tanstack
+**/dist
 .git
-.env
-.env.local
+.env*
+**/.env*
+evals/results
+docs
+bugs
+*.png

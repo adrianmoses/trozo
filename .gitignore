@@ -17,3 +17,5 @@ __pycache__/
 .cache/
 evals/results/
 .idea/
+.env.*
+!.env.example

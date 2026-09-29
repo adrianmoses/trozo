@@ -16,29 +16,27 @@ services:
       retries: 10
 
   chunker:
-    build: ./services/chunker
+    # Repo-root context so the image bakes in the seed, like production (006).
+    build:
+      context: .
+      dockerfile: services/chunker/Dockerfile
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       CHUNKER_TOKEN: ${CHUNKER_TOKEN:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CHUNKER_VERIFIER_MODEL: ${CHUNKER_VERIFIER_MODEL:-gpt-5.4-mini}
-      CHUNKER_SEED_PATH: /app/seed/seed_v1.yaml
-      CHUNKER_CACHE_DIR: /app/.cache/chunker
     volumes:
-      - ./evals/seed:/app/seed:ro
       - chunker-cache:/app/.cache
     ports:
       - '8000:8000'
 
-  # One-shot: applies apps/web/drizzle migrations, then exits. Reuses the web
-  # Dockerfile's build stage, which has drizzle-kit; the runtime image does not.
+  # One-shot: applies apps/web/drizzle migrations, then exits. Runs the web
+  # runtime image's bundled migrate.mjs, as Fly's release_command does (006).
   migrate:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-      target: build
-    working_dir: /repo/apps/web
-    command: ['pnpm', 'db:migrate']
+    command: ['node', 'migrate.mjs']
     environment:
       DATABASE_URL: postgres://trozo:trozo@postgres:5432/trozo
     depends_on:

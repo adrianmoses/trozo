@@ -166,6 +166,10 @@ The contract lives in the Pydantic models (`services/chunker/app/models.py`); re
 | `CHUNKER_URL`            | web                 | `http://localhost:8000`            | Where the web app's server functions reach the chunk service.                                                     |
 | `CHUNKER_TOKEN`          | chunker, web, evals | unset                              | Optional shared secret. When set, `POST /v1/chunk` requires `Authorization: Bearer <token>`.                      |
 | `DATABASE_URL`           | web                 | —                                  | Postgres for saved chunks (004). Also read by `drizzle-kit` from `apps/web` or the repo root's `.env.local`.      |
+| `CF_ACCESS_TEAM_DOMAIN`  | web                 | unset                              | Cloudflare Access team domain. With `CF_ACCESS_AUD`, every request needs a valid Access JWT (006).                |
+| `CF_ACCESS_AUD`          | web                 | unset                              | Access application audience tag. On Fly, a missing Access value makes the app refuse requests (503).              |
+
+Production config and secrets are listed per app in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Full stack via Docker
 
@@ -177,7 +181,7 @@ export OPENAI_API_KEY="$(grep '^OPENAI_API_KEY=' .env.local | cut -d= -f2-)"
 docker compose up --build
 ```
 
-Starts web (`:3000`), the chunk service (`:8000`, health at `/v1/health`), and Postgres 16 (`:5432`, user/password/db `trozo`). A one-shot `migrate` service applies the Drizzle migrations before web starts, so an empty database needs no manual step. Images do not hot-reload; use `pnpm dev:all` for development.
+Starts web (`:3000`), the chunk service (`:8000`, health at `/v1/health`), and Postgres 16 (`:5432`, user/password/db `trozo`). A one-shot `migrate` service runs the web image's bundled `migrate.mjs` before web starts, so an empty database needs no manual step. The chunker image bakes in the seed (no mount), as in production. Web health is at `/healthz`. Images do not hot-reload; use `pnpm dev:all` for development.
 
 ## Database
 
