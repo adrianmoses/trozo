@@ -6,7 +6,7 @@
 | ------- | ---------- |
 | status  | approved   |
 | created | 2026-09-23 |
-| revised | 2026-09-27 |
+| revised | 2026-09-29 |
 
 ## System Overview <!-- required -->
 
@@ -36,8 +36,8 @@ flowchart LR
 
 ## Component Map <!-- required -->
 
-- **`apps/web`** — Translator route `/` (query string `?q=…&region=…` for shareable results; last region remembered in a cookie), `/saved` route with filters and export buttons (004), server functions (`chunkFn` fast call, `chunkFullFn` background full-confidence call; saved chunks: `saveChunkFn`, `savedIndexFn`, `listSavedFn`, `deleteSavedFn`, `syncConfidenceFn`), streamed export route (`/api/export?format=csv|cloze|txt`), Drizzle schema and committed migrations for `saved_chunks` (applied by a one-shot `migrate` Compose service).
-- **`services/chunker`** — `POST /v1/chunk`, `GET /v1/health`, `GET /v1/meta`. Generation pipeline as pure functions: normalize → cache lookup → structured LLM generate → validate/repair → seed match → fast confidence; full mode rescoring (`app/pipeline/full.py`): samples → consistency → verifier → labels. Versioned prompt files (`prompts/pN.md`). Dev scripts: `export_schema.py`, `poison.py`, `spike_full.py`.
+- **`apps/web`** — Translator route `/` (query string `?q=…&region=…` for shareable results; last region remembered in a cookie), `/saved` route with filters and export buttons (004), server functions (`chunkFn` fast call, `chunkFullFn` background full-confidence call; saved chunks: `saveChunkFn`, `savedIndexFn`, `listSavedFn`, `deleteSavedFn`, `syncConfidenceFn`), streamed export route (`/api/export?format=csv|cloze|txt`), Drizzle schema and committed migrations for `saved_chunks`, applied by `migrate.mjs` (drizzle-orm's migrator bundled into the runtime image; the `migrate` Compose service and, in production, Fly's `release_command`). Global request middleware (`src/start.ts`) checks the Cloudflare Access JWT on every server request when Access is configured and fails closed on Fly without it; `/healthz` is exempt (006).
+- **`services/chunker`** — `POST /v1/chunk`, `GET /v1/health`, `GET /v1/meta` (includes `seed_entries`; the image bakes in the seed, 006). Generation pipeline as pure functions: normalize → cache lookup → structured LLM generate → validate/repair → seed match → fast confidence; full mode rescoring (`app/pipeline/full.py`): samples → consistency → verifier → labels. Versioned prompt files (`prompts/pN.md`). Dev scripts: `export_schema.py`, `poison.py`, `spike_full.py`.
 - **`evals/`** — YAML seed set (`seed_v1.yaml`, 120 items, four tiers: simple, high regional variance, advanced, calque traps; `accepted:` and `also_valid:` answers and a `checked:` field per item, 005) and poison claims for the verifier; runner (`run.py --prompt --split --confidence fast|full --verifier`), offline re-scoring (`rescore.py`), threshold sweep (`tune.py`); metrics include region precision and over-tagging; JSONL raw results, summary JSON and a Markdown report with metric deltas per run; reports behind published numbers in `evals/reports/`.
 - **`packages/schema`** — JSON Schema exported from the Pydantic models; generates TS types so the API contract has one source of truth.
 
@@ -86,10 +86,10 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
-- Production deployment (roadmap 006–009): how migrations run from the runtime image, which lacks drizzle-kit (006); chunker VM size, cold start with the spaCy model and auto-stop behaviour on Fly (007); whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
+- Production deployment (roadmap 007–009): chunker VM size, cold start with the spaCy model and auto-stop behaviour on Fly (007); whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
 - Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
-Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
+Resolved: primary and verifier models (001, 003); migrations from the runtime image via a bundled drizzle-orm migrator (006); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
 
 ## Revision History
 
@@ -101,3 +101,4 @@ Resolved: primary and verifier models (001, 003); launch region set ES, MX, AR, 
 | 2026-09-27 | 005 and bug 003: 120-item seed with accepted/also-valid answers, region metrics, thresholds kept, matcher version in the cache key, `meta.dropped`, open decisions resolved        |
 | 2026-09-27 | Planned production topology: Cloudflare Workers (web) and Containers (chunker), Neon Postgres, Cloudflare Access; replaces the Fly.io/Railway deploy note                          |
 | 2026-09-27 | Production topology revised: both services on Fly.io (private chunker, volume-backed cache, per-PR previews), Neon Postgres over node-postgres, Cloudflare for DNS and Access only |
+| 2026-09-29 | 006: Access middleware, bundled migrate script, `/healthz`, seed baked into the chunker image, `seed_entries` in meta; migrations decision resolved                                |
