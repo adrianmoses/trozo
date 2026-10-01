@@ -6,13 +6,13 @@
 | ------- | ---------- |
 | status  | approved   |
 | created | 2026-09-23 |
-| revised | 2026-09-29 |
+| revised | 2026-10-01 |
 
 ## System Overview <!-- required -->
 
 Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one Postgres database. The web app never calls an LLM directly — it talks to the chunk service through server functions (with an optional service token), so API keys stay server-side. The chunk service keeps its own disk response cache and holds no user data; the web app owns Postgres (saved chunks, from 004). The eval CLI calls the same `POST /v1/chunk` endpoint as the UI, so evals test exactly what users get.
 
-**Production topology (live since 008 at https://trozoapp.com; CI/CD and previews in 009).** Locally everything runs in Docker Compose. In production (runbook: `docs/DEPLOY.md`):
+**Production topology (live since 008 at https://trozoapp.com; deployed from GitHub Actions since 009; preview apps planned in 010).** Locally everything runs in Docker Compose. In production (runbook: `docs/DEPLOY.md`):
 
 - Both services run on **Fly.io** from their existing Docker images, as two Fly apps in the same organization and region.
 - The web app is the only public entry point. The custom domain is on **Cloudflare** (DNS proxied to Fly) behind **Cloudflare Access**, and the web app rejects any request without a valid Access JWT (`Cf-Access-Jwt-Assertion`), so the app's `*.fly.dev` hostname can't bypass Access.
@@ -20,6 +20,8 @@ Three pieces: a TanStack Start web app, a Python FastAPI chunk service, and one 
 - Postgres is **Neon** (a production branch, with a branch per preview). Drizzle keeps node-postgres everywhere; production uses Neon's pooled connection string.
 - The response cache stays on disk, on a Fly volume attached to the chunker.
 - Migrations run as the web app's Fly `release_command`, before the new version takes traffic.
+- Deploys are automated (009). CI on every PR and push to `main`: Prettier, ESLint, `tsc`, web and schema tests with a Postgres service container, and chunker pytest. A successful CI run on `main` triggers the Deploy workflow, which deploys only the apps changed since the last successful deploy, chunker first. Each app uses its own Fly deploy token. The workflow checks that the chunker still has only a private IP, and that the web app's `*.fly.dev` hostname returns 403.
+- Both services log one JSON line per request to stdout, read with `fly logs` (009): the chunker logs cache hit, latency and the `meta.dropped` count; the web app logs chunker calls, Access rejections and failures. LLM spend is capped by the providers (200 USD a month each).
 - The web app suspends when idle like the chunker (256 MB machine); after a quiet spell the first request wakes the web app, then the chunker, then Neon, each in about a second.
 - The eval CLI keeps running against a local chunker.
 
@@ -68,8 +70,9 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - Postgres 15+ (saved chunks; the unique key uses `NULLS NOT DISTINCT`): Docker `postgres:16` locally, **Neon** in production (`aws-eu-central-1`, pooled endpoint, `sslmode=verify-full`).
 - spaCy with `es_core_news_sm` for lemma-level validation, seed matching and consistency matching.
 - Docker Compose for the one-command stack; `uvx honcho` + `Procfile` for local development.
-- **Fly.io** for production: `trozo-web` and `trozo-chunker` in `fra`, private networking between them, a volume for the chunker's response cache; per-PR preview apps planned (009).
+- **Fly.io** for production: `trozo-web` and `trozo-chunker` in `fra`, private networking between them, a volume for the chunker's response cache; per-PR preview apps planned (010).
 - **Cloudflare** for DNS/TLS on the custom domain and Access (authentication in front of the site); it does not host code.
+- **GitHub Actions** for CI and deploys (009); secrets `FLY_DEPLOY_TOKEN_CHUNKER` and `FLY_DEPLOY_TOKEN_WEB`.
 
 ## Key Constraints <!-- required -->
 
@@ -77,6 +80,7 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 - Confidence is always derived from signals — the model is never asked to rate itself.
 - Every pipeline step is a pure function so evals can test steps in isolation.
 - Prompts are versioned files; `prompt_version` is logged in every response and eval run. Editing a prompt in place does not invalidate the cache: bump the version.
+- Logs never contain the input phrase, tokens, JWTs or connection strings; log fields are an allowlist (009).
 - The disk response cache is keyed by hash(input, region, prompt_version, model, matcher version); full-mode entries add samples, verifier model and the perturbation flag. Bump `MATCHER_VERSION` when validation or matching changes (bug 003); chunks validation drops are listed in `meta.dropped`. It makes eval re-runs and re-scoring free. Contract fields added later must be optional, or backfilled on read, because cached responses are served as stored.
 - The full-sentence `translation` must contain every chunk's surface (lemma-level); the service returns `translation_highlight` ranges so the UI can underline them.
 - Regions are `neutral`, ES, MX, AR, CO; `neutral` is the default and a country tag is applied only when a form is characteristic there (over-tagging is measured by the evals since 005: 0.05 on test with p1).
@@ -87,10 +91,10 @@ Signals are durable; labels and the seed signal are recomputed whenever a cached
 ## Open Decisions <!-- optional -->
 
 - Example mirroring policy for bare-fragment inputs ("to look forward to"): deferred to prompt iteration since 001.
-- Production deployment (roadmap 009): whether previews get their own chunker or share one, and how preview URLs sit behind Access (009).
+- Preview apps (roadmap 010): how preview URLs sit behind Access, since `*.fly.dev` hostnames can't go through Cloudflare Access. Decided in 009: a preview calls the shared production chunker.
 - Prompt adoption on 60-item splits: 005's no-regression rule rejected p2 on one-to-three-item differences; the next prompt change should decide a tolerance or repeated runs before running.
 
-Resolved: primary and verifier models (001, 003); migrations from the runtime image via a bundled drizzle-orm migrator (006); chunker VM size, cold start and idle behaviour (007: 512 MB, suspend when idle); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
+Resolved: primary and verifier models (001, 003); migrations from the runtime image via a bundled drizzle-orm migrator (006); chunker VM size, cold start and idle behaviour (007: 512 MB, suspend when idle); CI/CD, logs and spend limits (009); launch region set ES, MX, AR, CO + neutral (001); confidence thresholds (003, re-checked on 120 items in 005); accepted variants in the seed (005, `accepted:` and `also_valid:`); over-tagging measured (005).
 
 ## Revision History
 
@@ -105,3 +109,4 @@ Resolved: primary and verifier models (001, 003); migrations from the runtime im
 | 2026-09-29 | 006: Access middleware, bundled migrate script, `/healthz`, seed baked into the chunker image, `seed_entries` in meta; migrations decision resolved                                |
 | 2026-09-29 | 007: chunker deployed on Fly (private, Flycast, token fail-closed, 512 MB, suspend when idle, cache volume); VM and idle decision resolved                                         |
 | 2026-09-29 | 008: production live at trozoapp.com (web on Fly, Neon, Cloudflare DNS/TLS/Access); topology no longer planned                                                                     |
+| 2026-10-01 | 009: CI on PRs, deploy on merge to main (changed apps only, chunker first), JSON logs, spend limits; previews moved to 010                                                         |

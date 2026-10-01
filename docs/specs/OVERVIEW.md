@@ -33,7 +33,7 @@ Monorepo layout:
 - `services/chunker` — Python 3.12, FastAPI, Pydantic v2. Provider SDKs behind a small `LLMClient` interface so primary and verifier models are swappable per eval run.
 - `evals/` — YAML seed set, runner, Markdown reports (Python, shares the chunker's environment).
 - `packages/schema` — JSON Schema exported from Pydantic, used to generate TS types for the web app.
-- Deploy: Docker Compose locally (one `docker compose up` for demos). Production (live at https://trozoapp.com since 008; CI/CD in 009): Fly.io runs the web app and the chunk service from their Docker images (the chunker on a private network only), Postgres is Neon, and the custom domain is on Cloudflare behind Cloudflare Access (single user, so no app-level auth). Runbook: `docs/DEPLOY.md`.
+- Deploy: Docker Compose locally (one `docker compose up` for demos). Production (live at https://trozoapp.com since 008; deployed by GitHub Actions on merge to `main` since 009): Fly.io runs the web app and the chunk service from their Docker images (the chunker on a private network only), Postgres is Neon, and the custom domain is on Cloudflare behind Cloudflare Access (single user, so no app-level auth). Runbook: `docs/DEPLOY.md`.
 
 ## Testing Suite <!-- required -->
 
@@ -41,6 +41,7 @@ Monorepo layout:
 - **Chunk service (`services/chunker`)**: pytest over the pipeline's pure functions (normalize, validate/repair, seed match, confidence rules), with LLM calls faked.
 - **Product quality bar**: the eval suite — ~120-item seed set, self-consistency runs, cross-model agreement, CLI report with metric deltas per prompt/model version. Runs on every prompt change; decision records cite eval metrics as evidence.
 - TypeScript strict mode, ESLint, Prettier on the web side.
+- **CI** (GitHub Actions, 009): every PR runs Prettier, ESLint, `tsc`, the web and schema tests (the Postgres suite against a service container, never skipped in CI) and chunker pytest. Evals stay local, since they spend LLM credit.
 
 ## Open Questions <!-- optional -->
 

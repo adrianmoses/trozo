@@ -22,7 +22,7 @@ Ordering follows the spec's milestones: build the evals alongside the service, n
 | 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory) | implemented | [spec](006-deploy-readiness/spec.md)     |
 | 007 | Chunker on Fly.io (private app with no public IP, reached over Flycast with the service token, volume for the response cache, VM size and cold start with the spaCy model)                 | implemented | [spec](007-chunker-fly/spec.md)          |
 | 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)          | implemented | [spec](008-web-fly-domain/spec.md)       |
-| 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; structured logs with the `meta.dropped` count, LLM spend limits)                        | in-progress | [spec](009-ci-ops/spec.md)               |
+| 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; structured logs with the `meta.dropped` count, LLM spend limits)                        | implemented | [spec](009-ci-ops/spec.md)               |
 | 010 | Preview apps per PR (a Fly app per PR on its own Neon branch, torn down on close, behind Access; calls the shared production chunker)                                                      | planned     | —                                        |
 
 ## Production deployment (006–009)
@@ -39,7 +39,7 @@ Constraints each spec must settle:
 - **The response cache stays on disk.** Evals and relabel-on-read rely on it. Plan: a Fly volume mounted at `CHUNKER_CACHE_DIR`. A volume belongs to one machine, so the chunker runs as a single machine; 007 records that limit.
 - **Postgres stays on node-postgres.** Plan: Neon's pooled connection string with TLS in production, the same Drizzle code as local dev and tests. Put the Fly region next to the Neon region.
 - **Previews behave like production.** Moved from 009 to 010 (2026-09-30): a Fly app per PR with its own Neon branch, destroyed when the PR closes, calling the shared production chunker (decided in 009's discovery). Still open: how previews sit behind Access (a hostname per preview on the custom domain with a wildcard Access application, or another route), since `*.fly.dev` can't go through Access.
-- **Secrets:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `CHUNKER_TOKEN`, `DATABASE_URL` and the Access audience live as Fly secrets, never in the repo. Provider-side spend limits are set in 009.
+- **Secrets:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `CHUNKER_TOKEN`, `DATABASE_URL` and the Access audience live as Fly secrets, never in the repo. Provider-side spend limits: 200 USD a month each (009).
 
 ## Status Values
 
@@ -73,3 +73,4 @@ Constraints each spec must settle:
 | 2026-09-29 | 008 spec drafted, status in-progress                                            |
 | 2026-09-29 | 008 implemented (decision record complete); production live at trozoapp.com     |
 | 2026-09-30 | 009 spec drafted, status in-progress; previews split out as 010                 |
+| 2026-10-01 | 009 implemented (decision record complete); deploys run from GitHub Actions     |
