@@ -11,18 +11,19 @@
 
 Ordering follows the spec's milestones: build the evals alongside the service, not after it — the first 30 seed items come before the first UI.
 
-| ID  | Feature                                                                                                                                                                                                       | Status      | Spec                                     |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------- |
-| 000 | Monorepo restructure (move app to `apps/web`, scaffold `services/chunker`, `evals/`, `packages/schema`, Docker Compose)                                                                                       | implemented | [spec](000-monorepo-restructure/spec.md) |
-| 001 | Seed v0 + chunk service (30 seed items; `POST /v1/chunk` returns valid JSON; eval runner prints chunk recall and calque rate)                                                                                 | implemented | [spec](001-seed-chunk-service/spec.md)   |
-| 002 | Translator UI (input bar, full translation, watch-out box, chunk cards, notes, copy; `fast` confidence from seed)                                                                                             | implemented | [spec](002-translator-ui/spec.md)        |
-| 003 | Full confidence (self-consistency + verifier wired; thresholds tuned on `dev` split)                                                                                                                          | implemented | [spec](003-full-confidence/spec.md)      |
-| 004 | Saving + export (Postgres `saved_chunks`, `/saved` route, Anki CSV and TXT export)                                                                                                                            | implemented | [spec](004-saving-export/spec.md)        |
-| 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)                                                                                       | implemented | [spec](005-seed-eval-report/spec.md)     |
-| 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory)                    | implemented | [spec](006-deploy-readiness/spec.md)     |
-| 007 | Chunker on Fly.io (private app with no public IP, reached over Flycast with the service token, volume for the response cache, VM size and cold start with the spaCy model)                                    | implemented | [spec](007-chunker-fly/spec.md)          |
-| 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)                             | implemented | [spec](008-web-fly-domain/spec.md)       |
-| 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; per-PR Fly preview apps on a Neon branch, torn down on close; logs, `meta.dropped` rate, LLM spend limits) | planned     | —                                        |
+| ID  | Feature                                                                                                                                                                                    | Status      | Spec                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------------------------------------- |
+| 000 | Monorepo restructure (move app to `apps/web`, scaffold `services/chunker`, `evals/`, `packages/schema`, Docker Compose)                                                                    | implemented | [spec](000-monorepo-restructure/spec.md) |
+| 001 | Seed v0 + chunk service (30 seed items; `POST /v1/chunk` returns valid JSON; eval runner prints chunk recall and calque rate)                                                              | implemented | [spec](001-seed-chunk-service/spec.md)   |
+| 002 | Translator UI (input bar, full translation, watch-out box, chunk cards, notes, copy; `fast` confidence from seed)                                                                          | implemented | [spec](002-translator-ui/spec.md)        |
+| 003 | Full confidence (self-consistency + verifier wired; thresholds tuned on `dev` split)                                                                                                       | implemented | [spec](003-full-confidence/spec.md)      |
+| 004 | Saving + export (Postgres `saved_chunks`, `/saved` route, Anki CSV and TXT export)                                                                                                         | implemented | [spec](004-saving-export/spec.md)        |
+| 005 | Seed to 120 + eval report (native-checked regional items; README with metrics table and before/after prompt comparison)                                                                    | implemented | [spec](005-seed-eval-report/spec.md)     |
+| 006 | Deploy readiness (Access JWT check in the web app, migrations runnable from the runtime image, Neon pooled connection for node-postgres, health checks, prod config and secrets inventory) | implemented | [spec](006-deploy-readiness/spec.md)     |
+| 007 | Chunker on Fly.io (private app with no public IP, reached over Flycast with the service token, volume for the response cache, VM size and cold start with the spaCy model)                 | implemented | [spec](007-chunker-fly/spec.md)          |
+| 008 | Web on Fly.io + custom domain (Cloudflare DNS and TLS in front of Fly, Cloudflare Access on the whole site, Neon production branch, Fly secrets, migrations as `release_command`)          | implemented | [spec](008-web-fly-domain/spec.md)       |
+| 009 | CI/CD and operations (GitHub Actions: tests on PRs, deploy on merge to main with migrations first; structured logs with the `meta.dropped` count, LLM spend limits)                        | in-progress | [spec](009-ci-ops/spec.md)               |
+| 010 | Preview apps per PR (a Fly app per PR on its own Neon branch, torn down on close, behind Access; calls the shared production chunker)                                                      | planned     | —                                        |
 
 ## Production deployment (006–009)
 
@@ -37,7 +38,7 @@ Constraints each spec must settle:
 - **Migrations run from the runtime image.** Fly's `release_command` runs in the image being deployed, which ships only `.output` and has no drizzle-kit. Plan: a small migrate script using drizzle-orm's migrator, or ship drizzle-kit in the image; chosen in 006.
 - **The response cache stays on disk.** Evals and relabel-on-read rely on it. Plan: a Fly volume mounted at `CHUNKER_CACHE_DIR`. A volume belongs to one machine, so the chunker runs as a single machine; 007 records that limit.
 - **Postgres stays on node-postgres.** Plan: Neon's pooled connection string with TLS in production, the same Drizzle code as local dev and tests. Put the Fly region next to the Neon region.
-- **Previews behave like production.** Plan: 009 creates a Fly app per PR with its own Neon branch and destroys both when the PR closes. Previews must be behind Access too (a wildcard preview hostname on the custom domain, or the JWT check with a preview Access application), and 009 decides whether each preview gets its own chunker or calls a shared one.
+- **Previews behave like production.** Moved from 009 to 010 (2026-09-30): a Fly app per PR with its own Neon branch, destroyed when the PR closes, calling the shared production chunker (decided in 009's discovery). Still open: how previews sit behind Access (a hostname per preview on the custom domain with a wildcard Access application, or another route), since `*.fly.dev` can't go through Access.
 - **Secrets:** `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `CHUNKER_TOKEN`, `DATABASE_URL` and the Access audience live as Fly secrets, never in the repo. Provider-side spend limits are set in 009.
 
 ## Status Values
@@ -71,3 +72,4 @@ Constraints each spec must settle:
 | 2026-09-29 | 007 implemented (decision record complete)                                      |
 | 2026-09-29 | 008 spec drafted, status in-progress                                            |
 | 2026-09-29 | 008 implemented (decision record complete); production live at trozoapp.com     |
+| 2026-09-30 | 009 spec drafted, status in-progress; previews split out as 010                 |

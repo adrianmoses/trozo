@@ -129,14 +129,24 @@ describe('accessDecision', () => {
     )
     expect(res?.status).toBe(503)
     expect(await res?.text()).toContain('CF_ACCESS_AUD')
+    expect(log).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        reason: 'misconfigured',
+        missing: 'CF_ACCESS_AUD',
+      }),
+    )
   })
 
   it('returns 403 without a token and logs no token', async () => {
     const res = await accessDecision(request('/'), on, getJwks, log)
     expect(res?.status).toBe(403)
-    expect(log).toHaveBeenLastCalledWith(
-      expect.stringContaining('missing Access token'),
-    )
+    expect(log).toHaveBeenLastCalledWith({
+      event: 'access_denied',
+      status: 403,
+      method: 'GET',
+      path: '/',
+      reason: 'missing',
+    })
   })
 
   it('returns 403 for an invalid token without logging it', async () => {
@@ -148,7 +158,10 @@ describe('accessDecision', () => {
       log,
     )
     expect(res?.status).toBe(403)
-    expect(log).not.toHaveBeenLastCalledWith(expect.stringContaining(jwt))
+    expect(log).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: 403, reason: 'invalid' }),
+    )
+    expect(JSON.stringify(log.mock.lastCall)).not.toContain(jwt)
   })
 
   it('lets a valid token through', async () => {

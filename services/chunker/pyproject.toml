@@ -25,6 +25,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 filterwarnings = [
     # `register` is a contract field name (design doc); the pydantic shadow
     # warning is a false alarm for our usage.

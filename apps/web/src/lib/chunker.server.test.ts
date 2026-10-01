@@ -118,3 +118,68 @@ describe('chunkPhrase', () => {
     })
   })
 })
+
+describe('chunkPhrase logging', () => {
+  const env = { CHUNKER_TOKEN: 'tok-secret-123' }
+
+  function logged(log: ReturnType<typeof vi.fn>) {
+    expect(log).toHaveBeenCalledTimes(1)
+    const [line, level] = log.mock.calls[0] as [string, string]
+    return { line, level, fields: JSON.parse(line) as Record<string, unknown> }
+  }
+
+  it('logs one info line with status, latency, cache flag and dropped count', async () => {
+    const { fetchImpl } = fakeFetch(200, sampleResponse)
+    const log = vi.fn()
+    await chunkPhrase(input, { fetch: fetchImpl, env, log })
+    const { level, fields } = logged(log)
+    expect(level).toBe('info')
+    expect(fields).toMatchObject({
+      event: 'chunker_call',
+      fn: 'chunkFn',
+      status: 200,
+      cache_hit: sampleResponse.meta.cached,
+      dropped: sampleResponse.meta.dropped?.length ?? 0,
+    })
+    expect(typeof fields.latency_ms).toBe('number')
+  })
+
+  it('names chunkFullFn for full mode', async () => {
+    const { fetchImpl } = fakeFetch(200, sampleResponse)
+    const log = vi.fn()
+    await chunkPhrase(
+      { ...input, confidenceMode: 'full' },
+      { fetch: fetchImpl, env, log },
+    )
+    expect(logged(log).fields.fn).toBe('chunkFullFn')
+  })
+
+  it('logs failures as warn with status and code', async () => {
+    const { fetchImpl } = fakeFetch(502, {
+      error: { code: 'llm_failure', message: 'boom' },
+    })
+    const log = vi.fn()
+    await chunkPhrase(input, { fetch: fetchImpl, env, log })
+    const { level, fields } = logged(log)
+    expect(level).toBe('warn')
+    expect(fields).toMatchObject({ status: 502, code: 'llm_failure' })
+  })
+
+  it('logs network failures as status 0', async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error('ECONNREFUSED')
+    }) as unknown as typeof fetch
+    const log = vi.fn()
+    await chunkPhrase(input, { fetch: fetchImpl, env, log })
+    expect(logged(log).fields).toMatchObject({ status: 0, code: 'network' })
+  })
+
+  it('never logs the phrase or the token', async () => {
+    const { fetchImpl } = fakeFetch(200, sampleResponse)
+    const log = vi.fn()
+    await chunkPhrase(input, { fetch: fetchImpl, env, log })
+    const { line } = logged(log)
+    expect(line).not.toContain(input.text)
+    expect(line).not.toContain(env.CHUNKER_TOKEN)
+  })
+})

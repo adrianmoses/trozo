@@ -4,6 +4,8 @@
 // into global request middleware.
 import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type { JWTVerifyGetKey } from 'jose'
+import { logJson } from '#/lib/log.server'
+import type { LogFields } from '#/lib/log.server'
 
 export const HEALTH_PATH = '/healthz'
 export const ACCESS_HEADER = 'cf-access-jwt-assertion'
@@ -59,28 +61,39 @@ export async function verifyAccessJwt(
   }
 }
 
-/** A response that ends the request, or null to let it through. Never logs
- * the token itself. */
+/** A response that ends the request, or null to let it through. Each
+ * rejection is one JSON log line (009); never the token itself. */
 export async function accessDecision(
   request: Request,
   config: AccessConfig,
   jwks: () => JWTVerifyGetKey,
-  log: (message: string) => void = console.warn,
+  log: (fields: LogFields) => void = (fields) => logJson('warn', fields),
 ): Promise<Response | null> {
   const { pathname } = new URL(request.url)
   if (pathname === HEALTH_PATH || config.state === 'off') return null
 
   if (config.state === 'misconfigured') {
     const message = `Cloudflare Access is not configured: set ${config.missing.join(' and ')}`
-    log(`[access] 503 ${request.method} ${pathname}: ${message}`)
+    log({
+      event: 'access_denied',
+      status: 503,
+      method: request.method,
+      path: pathname,
+      reason: 'misconfigured',
+      missing: config.missing.join(','),
+    })
     return new Response(message, { status: 503 })
   }
 
   const token = request.headers.get(ACCESS_HEADER)
   if (token && (await verifyAccessJwt(token, config, jwks()))) return null
 
-  log(
-    `[access] 403 ${request.method} ${pathname}: ${token ? 'invalid' : 'missing'} Access token`,
-  )
+  log({
+    event: 'access_denied',
+    status: 403,
+    method: request.method,
+    path: pathname,
+    reason: token ? 'invalid' : 'missing',
+  })
   return new Response('Forbidden', { status: 403 })
 }

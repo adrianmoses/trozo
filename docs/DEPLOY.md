@@ -1,6 +1,6 @@
 # Deploying trozo
 
-Production (live since 2026-09-29, roadmap 006–008): both services on **Fly.io**, Postgres on **Neon**, and **https://trozoapp.com** on **Cloudflare** behind **Cloudflare Access** (only `adrian@thesolo.dev` can sign in). This page is the config and secrets inventory, the deploy commands, and the Cloudflare checklist. 009 automates the deploys.
+Production (live since 2026-09-29, roadmap 006–008): both services on **Fly.io**, Postgres on **Neon**, and **https://trozoapp.com** on **Cloudflare** behind **Cloudflare Access** (only `adrian@thesolo.dev` can sign in). This page is the config and secrets inventory, the automated deploys (009), logs and spend limits, the manual deploy commands (now the fallback), and the Cloudflare checklist.
 
 | Piece    | Where                                                     | Region                                    |
 | -------- | --------------------------------------------------------- | ----------------------------------------- |
@@ -9,6 +9,86 @@ Production (live since 2026-09-29, roadmap 006–008): both services on **Fly.io
 | Chunker  | Fly app `trozo-chunker` (no public IP, Flycast only)      | `fra`, single machine with a cache volume |
 | Domain   | `trozoapp.com`, registered at Cloudflare; DNS and Access  | —                                         |
 | Access   | Zero Trust team `round-cake-32d9`, application `trozo`    | —                                         |
+
+## CI/CD (009)
+
+Merging to `main` is the only normal path to production.
+
+- **CI** (`.github/workflows/ci.yml`) runs on every PR and every push to `main`:
+  - Prettier, web ESLint, `tsc --noEmit`, and the web and schema tests. The Postgres suite runs against a `postgres:16` service container and fails if `TEST_DATABASE_URL` is missing, so it can't be skipped silently.
+  - Chunker pytest.
+  - It needs no secrets, so PRs from forks run it too.
+- **Deploy** (`.github/workflows/deploy.yml`) runs when CI succeeds on a push to `main`:
+  - It diffs the commit against the last successful automatic deploy, and deploys the chunker if `services/chunker/` or `evals/seed/` changed and the web app if `apps/web/` or `packages/schema/` changed. A docs-only merge deploys nothing. With no earlier deploy run, it deploys both.
+  - The chunker deploys first, then checks that `fly ips list` shows only the private address. The web app deploys only if the chunker deploy succeeded or wasn't needed.
+  - The web deploy runs `node migrate.mjs` as its `release_command`, then checks the protection: `trozo-web.fly.dev/` must return 403 and `/healthz` 200.
+  - Builds use Fly's remote builders (`--remote-only`). One deploy runs at a time (`deploy-production` concurrency group).
+- **Manual deploy:** Actions → Deploy → Run workflow, with `app` set to `both`, `chunker` or `web`. It deploys the head of `main`. Manual runs don't count as the base for change detection.
+
+### GitHub secrets
+
+| Secret                     | Value                                       |
+| -------------------------- | ------------------------------------------- |
+| `FLY_DEPLOY_TOKEN_CHUNKER` | `fly tokens create deploy -a trozo-chunker` |
+| `FLY_DEPLOY_TOKEN_WEB`     | `fly tokens create deploy -a trozo-web`     |
+
+Each token can deploy only its own app; neither can create apps or touch the other one. To set or rotate a token without it showing on screen:
+
+```bash
+fly tokens create deploy -a trozo-chunker | gh secret set FLY_DEPLOY_TOKEN_CHUNKER
+fly tokens create deploy -a trozo-web | gh secret set FLY_DEPLOY_TOKEN_WEB
+```
+
+Then revoke the old token (`fly tokens list -a <app>`, then `fly tokens revoke <id>`).
+
+### Rollback
+
+There is no rollback workflow. To go back to an earlier release:
+
+```bash
+fly releases -a trozo-web --image          # find the last good image
+fly deploy . --config apps/web/fly.toml --ha=false --image <image ref>
+```
+
+For the chunker, use `-a trozo-chunker` and `services/chunker/fly.toml`. The web app's release still runs `migrate.mjs`. Migrations only move forward, so a rollback across a migration must keep the old code compatible with the new schema. Then revert the commit on `main` with a PR, so the next deploy doesn't bring the change back.
+
+## Logs (009)
+
+Both services write one JSON object per line to stdout. Read them with `fly logs -a trozo-chunker` and `fly logs -a trozo-web` (add `--no-tail` for the recent buffer).
+
+| Service | `event`           | Fields                                                                                                                           |
+| ------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Chunker | `chunk`           | `status`, `request_id`, `confidence_mode`, `region`, `prompt_version`, `cache_hit`, `latency_ms`, `chunks`, `dropped` (count)    |
+| Chunker | `chunk_error`     | `status`, `code`, `exc_type`                                                                                                     |
+| Web     | `chunker_call`    | `fn` (`chunkFn` / `chunkFullFn`), `status` (0 = no response), `latency_ms`; on success `cache_hit`, `dropped`; on failure `code` |
+| Web     | `access_denied`   | `status` (403 / 503), `method`, `path`, `reason` (`missing`, `invalid`, `misconfigured`)                                         |
+| Web     | `server_fn_error` | `path`, `error`, `message`                                                                                                       |
+| Web     | `request_error`   | `path`, `error`, `message`                                                                                                       |
+
+No line contains the input phrase, a token, a JWT or a connection string. Uvicorn's own access log lines (plain text) still appear in the chunker's log.
+
+**Dropped rate** (share of chunks that validation removed, over the fast responses in the buffer):
+
+```bash
+fly logs -a trozo-chunker --no-tail | grep -o '{.*"event": "chunk".*}' \
+  | jq -s '[.[] | select(.confidence_mode == "fast")] as $r
+           | {responses: ($r | length), returned: ($r | map(.chunks) | add),
+              dropped: ($r | map(.dropped) | add)}
+           | . + {dropped_rate: (.dropped / ((.returned + .dropped) | if . == 0 then 1 else . end))}'
+```
+
+Cache hits replay the stored `meta.dropped`, so a phrase asked twice counts twice. Fly keeps only a short log buffer, so this measures recent traffic, not all time.
+
+## Spend limits (009)
+
+LLM spend is capped by the providers, not by the chunker:
+
+| Provider  | Where                                                 | Monthly limit              |
+| --------- | ----------------------------------------------------- | -------------------------- |
+| Anthropic | Console → Settings → Limits (spend limit for the org) | 200 USD (provider default) |
+| OpenAI    | Platform → Settings → Limits (project or org budget)  | 200 USD (provider default) |
+
+When a limit is reached, the provider rejects calls. The chunker then answers 502 `llm_failure` or 503 `llm_rate_limited`, and the UI shows the error. Full confidence without the verifier still works if only OpenAI's limit is hit.
 
 ## Images
 
@@ -46,6 +126,8 @@ docker build -f services/chunker/Dockerfile .
 **Neon URL shape.** Use the pooled string from the Neon console with `sslmode=verify-full` in place of `sslmode=require` (TLS 1.3 with a verified `*.eu-central-1.aws.neon.tech` certificate; Neon refuses plaintext). Neon's `channel_binding=require` also works with node-postgres and may be kept or dropped. Locally the URL lives in the git-ignored `.env.production`; never paste it into a command.
 
 ### Deploying the web app (008)
+
+Normally the Deploy workflow runs this (see CI/CD). The commands below are for setup and as a fallback.
 
 Fly app `trozo-web` in the `personal` org, config in `apps/web/fly.toml`. Run flyctl from the repo root, as for the chunker.
 
@@ -120,6 +202,8 @@ Each deploy first runs `node migrate.mjs` on a one-off release machine against N
 | `FLY_APP_NAME`           | set by Fly | —                           | Turns on the token guard's fail-closed check.                   |
 
 ### Deploying the chunker (007)
+
+Normally the Deploy workflow runs this (see CI/CD). The commands below are for setup and as a fallback.
 
 Fly app `trozo-chunker` in the `personal` org, config in `services/chunker/fly.toml`. **Always run flyctl from the repo root and pass the app** (`-a trozo-chunker` or `--config`): the build context must include `evals/seed`, and the repo root has no `fly.toml` for flyctl to find.
 

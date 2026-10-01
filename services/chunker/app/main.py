@@ -8,6 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.llm import AnthropicLLMClient, LLMClient, LLMError, LLMRateLimited, OpenAILLMClient
+from app.logs import log_chunk, log_chunk_error
 from app.models import (
     Alternative,
     Chunk,
@@ -33,28 +34,36 @@ from app.prompts import current_version, load_prompt
 app = FastAPI(title="trozo chunk service")
 
 
-def _error(status: int, code: str, message: str) -> JSONResponse:
+def _error(status: int, code: str, message: str, request: Request | None = None,
+           exc: BaseException | None = None) -> JSONResponse:
+    if request is not None and exc is not None and request.url.path == "/v1/chunk":
+        log_chunk_error(status, code, exc)
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
 
 
 @app.exception_handler(InvalidInput)
-async def invalid_input_handler(_: Request, exc: InvalidInput) -> JSONResponse:
-    return _error(422, "invalid_input", str(exc))
+async def invalid_input_handler(request: Request, exc: InvalidInput) -> JSONResponse:
+    return _error(422, "invalid_input", str(exc), request, exc)
 
 
 @app.exception_handler(RequestValidationError)
-async def request_validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
-    return _error(422, "invalid_input", str(exc.errors()[0].get("msg", "invalid request")))
+async def request_validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    return _error(422, "invalid_input", str(exc.errors()[0].get("msg", "invalid request")), request, exc)
 
 
 @app.exception_handler(LLMError)
-async def llm_error_handler(_: Request, exc: LLMError) -> JSONResponse:
-    return _error(502, "llm_failure", str(exc))
+async def llm_error_handler(request: Request, exc: LLMError) -> JSONResponse:
+    return _error(502, "llm_failure", str(exc), request, exc)
 
 
 @app.exception_handler(LLMRateLimited)
-async def llm_rate_limited_handler(_: Request, exc: LLMRateLimited) -> JSONResponse:
-    return _error(503, "llm_rate_limited", str(exc))
+async def llm_rate_limited_handler(request: Request, exc: LLMRateLimited) -> JSONResponse:
+    return _error(503, "llm_rate_limited", str(exc), request, exc)
+
+
+@app.exception_handler(Exception)
+async def unexpected_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    return _error(500, "internal_error", "internal error", request, exc)
 
 
 class Unauthorized(Exception):
@@ -62,8 +71,8 @@ class Unauthorized(Exception):
 
 
 @app.exception_handler(Unauthorized)
-async def unauthorized_handler(_: Request, exc: Unauthorized) -> JSONResponse:
-    return _error(401, "unauthorized", str(exc) or "missing or invalid service token")
+async def unauthorized_handler(request: Request, exc: Unauthorized) -> JSONResponse:
+    return _error(401, "unauthorized", str(exc) or "missing or invalid service token", request, exc)
 
 
 class Misconfigured(Exception):
@@ -71,8 +80,8 @@ class Misconfigured(Exception):
 
 
 @app.exception_handler(Misconfigured)
-async def misconfigured_handler(_: Request, exc: Misconfigured) -> JSONResponse:
-    return _error(503, "service_misconfigured", str(exc))
+async def misconfigured_handler(request: Request, exc: Misconfigured) -> JSONResponse:
+    return _error(503, "service_misconfigured", str(exc), request, exc)
 
 
 def require_token(authorization: str | None = Header(default=None)) -> None:
@@ -226,6 +235,12 @@ def _backfill_translation_highlight(payload: dict) -> bool:
 
 @app.post("/v1/chunk", dependencies=[Depends(require_token)])
 def chunk(request: ChunkRequest) -> JSONResponse:
+    payload = _chunk(request)
+    log_chunk(request.confidence_mode.value, request.preferred_region.value, payload)
+    return JSONResponse(content=payload)
+
+
+def _chunk(request: ChunkRequest) -> dict:
     started = time.monotonic()
     text = normalize_input(request.text)
     llm = get_llm()
@@ -260,7 +275,7 @@ def chunk(request: ChunkRequest) -> JSONResponse:
     if request.confidence_mode is ConfidenceMode.fast:
         fast["meta"]["cached"] = fast_cached
         fast["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
-        return JSONResponse(content=fast)
+        return fast
 
     # Full mode rescores the fast response: same ids, text and order; only
     # confidence changes. Cached under its own key; the fast entry is untouched.
@@ -284,4 +299,4 @@ def chunk(request: ChunkRequest) -> JSONResponse:
         cache.put(fkey, full)
         full["meta"]["cached"] = False
     full["meta"]["latency_ms"] = int((time.monotonic() - started) * 1000)
-    return JSONResponse(content=full)
+    return full

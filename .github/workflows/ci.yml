@@ -1,0 +1,68 @@
+# Tests on every PR and on main (009). No secrets: PRs from forks run the
+# same checks. A green run on main is what triggers deploy.yml.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: trozo
+          POSTGRES_PASSWORD: trozo
+          POSTGRES_DB: trozo
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U trozo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The saved-chunks suite runs against it; with CI set it refuses to skip.
+      TEST_DATABASE_URL: postgres://trozo:trozo@localhost:5432/trozo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Prettier
+        run: pnpm check
+      - name: ESLint
+        run: pnpm --filter web lint
+      - name: Type check
+        run: pnpm --filter web typecheck
+      - name: Tests (web and schema)
+        run: pnpm test
+
+  chunker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/chunker
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: services/chunker/uv.lock
+      - run: uv sync --locked
+      - name: pytest
+        run: uv run pytest

@@ -1,0 +1,120 @@
+# Production deploys (009). Runs after CI succeeds on a push to main, or by
+# hand. Only apps whose files changed since the last successful automatic
+# deploy are deployed; the chunker goes first. Commands match docs/DEPLOY.md.
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app:
+        description: App to deploy from main
+        type: choice
+        options: [both, chunker, web]
+        default: both
+
+permissions:
+  contents: read
+  actions: read # gh run list, to find the last successful deploy
+
+# One deploy at a time; a queued one waits instead of cancelling the running
+# one. A newer queued run replaces an older queued one, which is safe because
+# change detection diffs against the last successful deploy, not HEAD^.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.detect.outputs.sha }}
+      chunker: ${{ steps.detect.outputs.chunker }}
+      web: ${{ steps.detect.outputs.web }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+      - id: detect
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          APP: ${{ inputs.app }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT" = workflow_dispatch ]; then
+            [ "$APP" != web ] && echo chunker=true >> "$GITHUB_OUTPUT"
+            [ "$APP" != chunker ] && echo web=true >> "$GITHUB_OUTPUT"
+            echo "manual deploy: $APP"
+            exit 0
+          fi
+          # Base: the commit of the last successful automatic deploy. Manual
+          # runs don't count (a chunker-only run says nothing about the web).
+          base=$(gh run list --workflow deploy.yml --event workflow_run \
+            --status success --limit 1 --json headSha --jq '.[0].headSha // ""')
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "no previous deploy found: deploying both"
+            echo chunker=true >> "$GITHUB_OUTPUT"
+            echo web=true >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          changed=$(git diff --name-only "$base" "$sha")
+          echo "changed since $base:"
+          echo "$changed" | sed 's/^/  /'
+          echo "$changed" | grep -qE '^(services/chunker|evals/seed)/' && echo chunker=true >> "$GITHUB_OUTPUT"
+          echo "$changed" | grep -qE '^(apps/web|packages/schema)/' && echo web=true >> "$GITHUB_OUTPUT"
+          exit 0
+
+  deploy-chunker:
+    needs: changes
+    if: needs.changes.outputs.chunker == 'true'
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_DEPLOY_TOKEN_CHUNKER }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.changes.outputs.sha }}
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # From the repo root: the build context must include evals/seed (007).
+      - run: flyctl deploy . --config services/chunker/fly.toml --ha=false --remote-only
+      - name: Chunker has no public IP
+        run: |
+          flyctl ips list -a trozo-chunker --json | tee ips.json
+          jq -e 'length > 0 and all(.[]; .Type == "private_v6")' ips.json > /dev/null \
+            || { echo "::error::trozo-chunker has a public IP"; exit 1; }
+
+  deploy-web:
+    needs: [changes, deploy-chunker]
+    # Runs when the web changed and the chunker deploy succeeded or wasn't needed.
+    if: >-
+      always() && needs.changes.result == 'success' &&
+      needs.changes.outputs.web == 'true' &&
+      contains(fromJSON('["success", "skipped"]'), needs.deploy-chunker.result)
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_DEPLOY_TOKEN_WEB }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.changes.outputs.sha }}
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # release_command (node migrate.mjs) runs before the release takes traffic.
+      - run: flyctl deploy . --config apps/web/fly.toml --ha=false --remote-only
+      - name: Protection check
+        run: |
+          status() { curl -s -o /dev/null -w '%{http_code}' --retry 3 --retry-all-errors --max-time 20 "$1"; }
+          root=$(status https://trozo-web.fly.dev/)
+          health=$(status https://trozo-web.fly.dev/healthz)
+          echo "trozo-web.fly.dev/ -> $root (want 403); /healthz -> $health (want 200)"
+          [ "$root" = 403 ] && [ "$health" = 200 ]
