@@ -83,10 +83,10 @@ Cache hits replay the stored `meta.dropped`, so a phrase asked twice counts twic
 
 LLM spend is capped by the providers, not by the chunker:
 
-| Provider  | Where                                                 | Monthly limit |
-| --------- | ----------------------------------------------------- | ------------- |
-| Anthropic | Console → Settings → Limits (spend limit for the org) | _TBD_         |
-| OpenAI    | Platform → Settings → Limits (project or org budget)  | _TBD_         |
+| Provider  | Where                                                 | Monthly limit              |
+| --------- | ----------------------------------------------------- | -------------------------- |
+| Anthropic | Console → Settings → Limits (spend limit for the org) | 200 USD (provider default) |
+| OpenAI    | Platform → Settings → Limits (project or org budget)  | 200 USD (provider default) |
 
 When a limit is reached, the provider rejects calls. The chunker then answers 502 `llm_failure` or 503 `llm_rate_limited`, and the UI shows the error. Full confidence without the verifier still works if only OpenAI's limit is hit.
 
