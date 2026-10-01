@@ -162,7 +162,6 @@ Merging to `main` is now the normal path to production.
 | "Errors are logged as JSON with the exception type"                                 | Also status and code. 401/503 from the token guard are included because they pass through the same handlers. Unexpected exceptions get a 500 handler | Each line says what failed without the message.                                                                                     |
 | Web logs "per failed request (route, error message)"                                | Two events: `request_error` (request middleware) and `server_fn_error` (function middleware)                                                         | Server-function errors never reach the request middleware as thrown errors (see Alternatives).                                      |
 | Access rejections logged                                                            | `accessDecision`'s logger now takes structured fields, not a string. The 006 tests were updated to match                                             | JSON lines are built from fields, which also makes "no token in the line" a direct assertion.                                       |
-| A docs-only merge deploys nothing (testing approach)                                | Not yet observed on a docs-only merge. The duplicate run on an unchanged diff deployed nothing                                                       | The merge of this decision record (docs only) is the first docs-only merge. Its Deploy run should skip both jobs.                   |
 | Testing: "a PR with a deliberately failing test shows a red check"                  | Not staged on purpose. PR #16's first CI run failed for real (chunker import error), and the PR showed a red check                                   | A real failure gave the same evidence.                                                                                              |
 | Chunker `uv sync` and pytest "as locally"                                           | Needed `pythonpath = ["."]` in `pyproject.toml`                                                                                                      | Locally pytest found `app` through the local environment; a clean runner didn't.                                                    |
 
@@ -267,4 +266,15 @@ GitHub secrets:
 ```
 FLY_DEPLOY_TOKEN_CHUNKER  2026-10-01T05:45:26Z
 FLY_DEPLOY_TOKEN_WEB      2026-10-01T05:49:38Z
+```
+
+The first docs-only merge (this record, PR #17, `2c43e91`) ran CI once and deployed nothing (Deploy run 36825942373):
+
+```
+changed since 92e846425e75d24039699e3157892cc1a552b52a:
+  docs/specs/009-ci-ops/decision.md
+  docs/specs/ARCHITECTURE.md
+  docs/specs/OVERVIEW.md
+  docs/specs/ROADMAP.md
+conclusion: success | changes success | deploy-chunker skipped | deploy-web skipped
 ```
