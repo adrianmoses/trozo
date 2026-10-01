@@ -19,3 +19,6 @@ evals/results/
 .idea/
 .env.*
 !.env.example
+
+# editor swap files
+*.swp

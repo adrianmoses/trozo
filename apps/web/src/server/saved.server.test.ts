@@ -21,8 +21,12 @@ import type { Db } from './saved.server'
 
 // Runs against a real Postgres (15+): set TEST_DATABASE_URL, e.g.
 // postgres://trozo:trozo@localhost:5432/trozo. Each run migrates a throwaway
-// schema and drops it afterwards. Skipped when the variable is unset.
+// schema and drops it afterwards. Skipped when the variable is unset, except
+// in CI, where a skip would hide the suite (009).
 const url = process.env.TEST_DATABASE_URL
+if (process.env.CI && !url) {
+  throw new Error('TEST_DATABASE_URL is required in CI')
+}
 const schemaName = `test_${randomUUID().replaceAll('-', '').slice(0, 12)}`
 
 const chunk = sampleResponse.chunks[0]
